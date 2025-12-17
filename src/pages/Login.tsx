@@ -7,7 +7,7 @@ import {
   FacebookAuthProvider,
   createUserWithEmailAndPassword,
   updateProfile,
-  User
+  type User
 } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';

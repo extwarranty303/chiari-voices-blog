@@ -15,6 +15,7 @@ interface BlogPost {
   excerpt: string;
   tags: string[];
   imageUrl?: string;
+  readTime?: string; // New field
   status: 'draft' | 'published';
   createdAt: any;
   authorId: string;
@@ -34,6 +35,7 @@ export default function AdminDashboard() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [postImage, setPostImage] = useState<string>('');
+  const [readTime, setReadTime] = useState(''); // New state
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
 
   // AI Dialog State
@@ -145,7 +147,7 @@ export default function AdminDashboard() {
     try {
       const generateSeoFunc = httpsCallable(functions, 'generateSeo');
       const result: any = await generateSeoFunc({ content });
-      const { keywords, metaDescription } = result.data;
+      const { keywords, metaDescription, readTime: estimatedReadTime } = result.data;
       
       // Merge new keywords
       const newTags = [...tags];
@@ -154,7 +156,10 @@ export default function AdminDashboard() {
       });
       setTags(newTags);
       
-      alert(`SEO Optimized!\n\nAdded Keywords: ${keywords.join(', ')}\n\nMeta Description (Copy this): ${metaDescription}`);
+      // Set read time
+      if (estimatedReadTime) setReadTime(estimatedReadTime);
+      
+      alert(`SEO Optimized!\n\nAdded Keywords: ${keywords.join(', ')}\nRead Time: ${estimatedReadTime}\n\nMeta Description (Copy this): ${metaDescription}`);
     } catch (error) {
       console.error("AI Error:", error);
       alert("Failed to analyze SEO.");
@@ -183,6 +188,7 @@ export default function AdminDashboard() {
       excerpt,
       tags,
       imageUrl: postImage,
+      readTime, // Save to Firestore
       status,
       authorId: currentUser.uid,
       authorName: currentUser.displayName || 'Anonymous',
@@ -218,6 +224,7 @@ export default function AdminDashboard() {
     setContent(post.content);
     setTags(post.tags || []);
     setPostImage(post.imageUrl || '');
+    setReadTime(post.readTime || '');
     setStatus(post.status);
     setIsEditing(true);
   };
@@ -239,6 +246,7 @@ export default function AdminDashboard() {
     setContent('');
     setTags([]);
     setPostImage('');
+    setReadTime('');
     setStatus('draft');
   };
 
@@ -357,6 +365,14 @@ export default function AdminDashboard() {
                      <option value="published">Published</option>
                    </select>
                 </div>
+
+                {/* Read Time (Auto-filled by AI or Manual) */}
+                <Input 
+                  label="Read Time" 
+                  value={readTime} 
+                  onChange={(e) => setReadTime(e.target.value)} 
+                  placeholder="e.g. 5 min read"
+                />
 
                 {/* Cover Image */}
                 <div className="space-y-2">

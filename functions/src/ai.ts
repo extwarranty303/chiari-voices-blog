@@ -33,7 +33,8 @@ const OutlineSchema = z.object({
 
 const SeoSchema = z.object({
   keywords: z.array(z.string()),
-  metaDescription: z.string()
+  metaDescription: z.string(),
+  readTime: z.string().describe("Estimated read time, e.g. '5 min read'")
 });
 
 // Export Cloud Functions
@@ -99,7 +100,10 @@ export const generateSeo = onCall({ timeoutSeconds: 60, memory: "512MiB" }, asyn
   
   try {
     const ai = getAi();
-    const prompt = `Analyze the following blog post content and generate 5-8 relevant SEO keywords and a compelling meta description (under 160 characters).
+    const prompt = `Analyze the following blog post content and generate:
+    1. 5-8 relevant SEO keywords.
+    2. A compelling meta description (under 160 characters).
+    3. An estimated read time string (e.g. "4 min read").
     
     Content: ${content.substring(0, 3000)}... (truncated for processing)
     
