@@ -53,6 +53,10 @@
     - [x] Fetch and display published posts.
     - [x] Filter by Tag.
     - [x] Skeleton loading states.
+    - [x] Featured Story Hero.
+    - [x] Category Filters.
+    - [x] Read Time Estimates.
+    - [x] Newsletter Signup.
 - [x] **Post Detail Page:**
     - [x] Render full HTML content safely (DOMPurify).
     - [x] Display Metadata (Author, Date, Tags).
@@ -78,3 +82,21 @@
 - [x] **Accessibility:** Checked contrast, improved ARIA labels for Buttons and Inputs.
 - [x] **SEO:** Dynamic `<meta>` tags using `react-helmet-async` implemented on Home and Post pages.
 - [x] **Testing:** Unit tests for `AuthContext` and UI components implemented using Vitest.
+
+### Phase 7: Advanced UI & Features (PLANNED)
+- [ ] **Typography System:**
+    - [ ] Headings: Space Grotesk (Bold, tight tracking).
+    - [ ] Body: Inter (Relaxed leading).
+    - [ ] Accessibility: OpenDyslexic toggle integration.
+- [ ] **Core UI Components:**
+    - [ ] "Symptom-Safe" Toggle (Reduced motion, high contrast mode).
+    - [ ] Glass Card: Dark glass aesthetic with hover glow (no scale).
+    - [ ] "Zipper" Progress Bar.
+- [ ] **Layout Updates:**
+    - [ ] Landing Page: Aurora Borealis background, new copy, 3D anatomical anchor.
+    - [ ] Article View: Centered single column (max 700px), "AI Brief", "Listen" button.
+    - [ ] Admin Dashboard: "The Muse" AI panel (Sentiment/Readability gauge).
+- [ ] **Interactive Features:**
+    - [ ] Sentiment Search (Filter by vibe).
+    - [ ] "Spoon" Visualizer (Complexity rating).
+- [ ] **Footer:** Update copyright to "Chiari Voices Foundation".

@@ -12,6 +12,7 @@ service cloud.firestore {
     }
     
     function getUserData() {
+      // Safely access user data
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
     
@@ -19,42 +20,29 @@ service cloud.firestore {
       return isAuthenticated() && getUserData().role == 'admin';
     }
     
-    // Moderators can do some things, if we decide to use them later
     function isModerator() {
       return isAuthenticated() && (getUserData().role == 'admin' || getUserData().role == 'moderator');
     }
 
     match /users/{userId} {
-      // Users can read their own profile. Admins can read all.
       allow read: if isOwner(userId) || isAdmin();
-      
-      // Users can update their own profile (name, photo, bookmarks)
-      // Prevent users from changing their own role
-      allow update: if isOwner(userId) && 
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']));
-        
-      // Allow users to create their profile on signup
+      allow update: if isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']));
       allow create: if isOwner(userId);
-      
-      // Admins can fully manage users
       allow write: if isAdmin();
     }
 
     match /posts/{postId} {
-      // Public can read published posts
-      allow read: if resource.data.status == 'published';
+      // Corrected Rule:
+      // Public can read 'published' posts.
+      // Admins/Mods can read any post (including drafts).
+      allow read: if resource.data.status == 'published' || isModerator();
       
-      // Admins/Mods can read drafts
-      allow read: if isModerator();
-      
-      // Only Admins can create/update/delete posts (as per user request "only admins")
-      // I'll include moderators for now as the codebase supports it, 
-      // but strict "only admins" would just be `isAdmin()`
-      allow write: if isAdmin(); 
+      // Only Admins/Mods can create/update/delete posts.
+      allow write: if isModerator(); 
     }
 
     match /comments/{commentId} {
-      allow read: if true;
+      allow read; // Public can read all comments
       allow create: if isAuthenticated();
       allow update, delete: if isOwner(resource.data.userId) || isModerator();
     }

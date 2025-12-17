@@ -4,20 +4,25 @@
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   --font-display: 'Space Grotesk', system-ui, sans-serif;
   
-  --color-background: #1A202C;
-  --color-surface: #EDF2F7;
-  --color-accent: #805AD5;
+  /* Brand Identity Colors */
+  --color-background: #0F172A; /* Void Navy */
+  --color-surface: #F8FAFC;    /* Starlight (Primary Text) */
+  --color-accent: #6B46C1;     /* Cerebellum Purple (Primary Action) */
+  --color-secondary: #38B2AC;  /* Vagus Teal (Secondary Action/Success) */
+  --color-muted: #94A3B8;      /* Nebula Grey (Muted Text) */
+  --color-alert: #F6E05E;      /* Symptom Amber (Warning) */
   
+  /* Tailwind shades mapping (Optional/Legacy support) */
   --color-primary-50: #f5f3ff;
   --color-primary-100: #ede9fe;
   --color-primary-200: #ddd6fe;
   --color-primary-300: #c4b5fd;
   --color-primary-400: #a78bfa;
   --color-primary-500: #8b5cf6;
-  --color-primary-600: #805AD5; /* Updated to requested accent */
-  --color-primary-700: #6d28d9;
-  --color-primary-800: #5b21b6;
-  --color-primary-900: #4c1d95;
+  --color-primary-600: #6B46C1; /* Updated to Cerebellum Purple */
+  --color-primary-700: #553C9A;
+  --color-primary-800: #44337A;
+  --color-primary-900: #322659;
   --color-primary-950: #2e1065;
 }
 
@@ -33,12 +38,17 @@
     font-family: var(--font-display);
     font-weight: 700;
     letter-spacing: -0.025em;
-    color: white;
+    color: var(--color-surface);
+  }
+
+  /* Utility class for muted text */
+  .text-muted {
+    color: var(--color-muted);
   }
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.05); /* Frost White */
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -48,11 +58,12 @@
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
+  color: var(--color-.surface);
 }
 
 .glass-input::placeholder {
-  color: rgba(237, 242, 247, 0.5);
+  color: var(--color-muted);
+  opacity: 0.7;
 }
 
 .glass-button {
@@ -64,6 +75,16 @@
 }
 
 .glass-button:hover {
-  background-color: #6d28d9; /* slightly darker than accent */
+  background-color: #553C9A; /* slightly darker Cerebellum Purple */
   transform: translateY(-1px);
+}
+
+/* Secondary Button Variant */
+.button-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-background); /* Dark text on Teal for contrast */
+}
+
+.button-secondary:hover {
+  background-color: #319795; /* slightly darker Teal */
 }

@@ -55,6 +55,12 @@ function App() {
                } />
              </Routes>
            </main>
+           
+           {/* Divider */}
+           <div className="container mx-auto px-4">
+            <hr className="border-t border-surface/10" />
+           </div>
+
            <Footer />
         </div>
       </Router>
