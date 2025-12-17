@@ -3,7 +3,7 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { Button, GlassPanel } from '../components/ui';
-import { ArrowRight, Rss } from 'lucide-react';
+import { ArrowRight, Rss, UserPlus } from 'lucide-react';
 import SEO from '../components/SEO';
 
 interface Post {
@@ -22,28 +22,14 @@ export default function Home() {
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        // Fetch the single featured post
-        const featuredQuery = query(
-          collection(db, 'posts'),
-          where('featured', '==', true),
-          where('status', '==', 'published'),
-          limit(1)
-        );
+        const featuredQuery = query(collection(db, 'posts'), where('featured', '==', true), where('status', '==', 'published'), limit(1));
         const featuredSnapshot = await getDocs(featuredQuery);
         if (!featuredSnapshot.empty) {
           const post = featuredSnapshot.docs[0];
           setFeaturedPost({ id: post.id, ...post.data() } as Post);
         }
 
-        // Fetch the 3 most recent non-featured posts
-        const latestQuery = query(
-          collection(db, 'posts'),
-          where('featured', '!=', true),
-          where('status', '==', 'published'),
-          orderBy('featured', 'asc'), // This seems odd, but is required by Firestore for the inequality filter
-          orderBy('createdAt', 'desc'),
-          limit(3)
-        );
+        const latestQuery = query(collection(db, 'posts'), where('featured', '!=', true), where('status', '==', 'published'), orderBy('featured', 'asc'), orderBy('createdAt', 'desc'), limit(3));
         const latestSnapshot = await getDocs(latestQuery);
         const posts = latestSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
         setLatestPosts(posts);
@@ -54,7 +40,6 @@ export default function Home() {
         setLoading(false);
       }
     };
-
     fetchPosts();
   }, []);
 
@@ -65,7 +50,6 @@ export default function Home() {
         description="Chiari Voices: A safe, supportive community blog for sharing stories and finding strength in the face of Chiari Malformation."
       />
       
-      {/* Hero Section */}
       <header className="text-center py-16">
         <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tighter">
           Sharing Stories. Finding Strength.
@@ -75,16 +59,11 @@ export default function Home() {
         </p>
       </header>
 
-      {/* Featured & Latest Posts */}
       <section>
         {loading ? (
           <div className="animate-pulse space-y-8">
             <div className="h-96 bg-surface/5 rounded-lg"></div>
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="h-64 bg-surface/5 rounded-lg"></div>
-              <div className="h-64 bg-surface/5 rounded-lg"></div>
-              <div className="h-64 bg-surface/5 rounded-lg"></div>
-            </div>
+            <div className="grid md:grid-cols-3 gap-6"><div className="h-64 bg-surface/5 rounded-lg"></div><div className="h-64 bg-surface/5 rounded-lg"></div><div className="h-64 bg-surface/5 rounded-lg"></div></div>
           </div>
         ) : (
           <div className="space-y-8">
@@ -94,9 +73,7 @@ export default function Home() {
                   <div className="order-2 md:order-1">
                     <h2 className="text-4xl font-bold text-white mb-4 group-hover:underline">{featuredPost.title}</h2>
                     <p className="text-surface/70 mb-6">{featuredPost.excerpt}</p>
-                    <div className="flex items-center font-semibold text-accent">
-                      Read Full Story <ArrowRight size={20} className="ml-2 transition-transform group-hover:translate-x-1" />
-                    </div>
+                    <div className="flex items-center font-semibold text-accent">Read Full Story <ArrowRight size={20} className="ml-2 transition-transform group-hover:translate-x-1" /></div>
                   </div>
                   <div className="order-1 md:order-2 h-64 md:h-full w-full overflow-hidden rounded-lg">
                     <img src={featuredPost.imageUrl || '/placeholder.jpg'} alt={featuredPost.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -110,9 +87,7 @@ export default function Home() {
                 {latestPosts.map(post => (
                   <Link key={post.id} to={`/blog/${post.id}`} className="block group">
                     <GlassPanel className="h-full flex flex-col p-6 hover:bg-white/10 transition-colors">
-                       <div className="h-40 w-full overflow-hidden rounded-lg mb-4">
-                         <img src={post.imageUrl || '/placeholder.jpg'} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                       </div>
+                       <div className="h-40 w-full overflow-hidden rounded-lg mb-4"><img src={post.imageUrl || '/placeholder.jpg'} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /></div>
                        <h3 className="text-xl font-bold text-white mb-2 flex-grow group-hover:underline">{post.title}</h3>
                        <p className="text-surface/60 text-sm line-clamp-3">{post.excerpt}</p>
                     </GlassPanel>
@@ -124,7 +99,23 @@ export default function Home() {
         )}
       </section>
 
-      {/* Call to Action */}
+      {/* Join Community Section */}
+      <section>
+        <GlassPanel className="grid md:grid-cols-2 gap-8 items-center p-12">
+            <div className="space-y-4">
+                <h2 className="text-3xl font-bold text-white">Join the Community</h2>
+                <p className="text-surface/70">Create an account to share your story, comment on articles, and connect with others in the Chiari community. Your voice matters.</p>
+            </div>
+            <div className="flex items-center justify-center">
+                 <Button asChild size="lg" className="w-full md:w-auto">
+                    <Link to="/login">
+                        <UserPlus size={20} className="mr-2" /> Create Your Account
+                    </Link>
+                </Button>
+            </div>
+        </GlassPanel>
+      </section>
+
       <section className="text-center">
         <GlassPanel className="p-12">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Explore?</h2>

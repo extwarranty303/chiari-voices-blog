@@ -3,7 +3,7 @@ import { db } from '../firebase';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { GlassPanel } from '../components/ui';
-import { Search } from 'lucide-react'; // Removed ArrowRight
+import { Search } from 'lucide-react';
 import SEO from '../components/SEO';
 import heroImageUrl from '/blog-hero.jpg'; // Direct import for reliability
 
@@ -92,7 +92,14 @@ export default function BlogList() {
       {/* Static Hero Image Section */}
       <div className="w-full h-80 rounded-xl overflow-hidden relative">
         <img src={heroImageUrl} alt="A person standing on a cliff overlooking a sunrise" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="absolute inset-0 bg-black/30 flex flex-col justify-center items-center text-center p-4">
+          <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight drop-shadow-lg">
+            Understanding Chiari Malformation
+          </h1>
+          <p className="text-xl md:text-2xl text-surface/90 mt-2 drop-shadow-md">
+            Finding Hope & Support
+          </p>
+        </div>
       </div>
 
       {/* Search and Filter Section */}

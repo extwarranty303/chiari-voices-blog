@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { GlassPanel } from '../components/ui';
-import { Calendar, User as UserIcon, ArrowLeft, Loader2, Share2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import CommentsSection from '../components/CommentsSection';
 import SEO from '../components/SEO';
@@ -14,27 +13,36 @@ interface BlogPost {
   title: string;
   content: string;
   imageUrl?: string;
-  tags: string[];
+  tags?: string[];
   createdAt: any;
   authorName: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  slug?: string;
+  primaryKeyword?: string;
+  secondaryKeywords?: string[];
 }
 
 export default function BlogPost() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPost = async () => {
-      if (!id) return;
+      if (!slug) return;
       try {
-        const docRef = doc(db, 'posts', id);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
+        const postsRef = collection(db, 'posts');
+        const q = query(postsRef, where("slug", "==", slug), limit(1));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const docSnap = querySnapshot.docs[0];
           setPost({ id: docSnap.id, ...docSnap.data() } as BlogPost);
         } else {
-          console.log("No such document!");
+          console.log("No such document for slug:", slug);
+          navigate('/404');
         }
       } catch (error) {
         console.error("Error fetching post:", error);
@@ -44,7 +52,7 @@ export default function BlogPost() {
     };
 
     fetchPost();
-  }, [id]);
+  }, [slug, navigate]);
 
   if (loading) {
     return <div className="flex justify-center items-center h-[50vh]"><Loader2 className="animate-spin text-accent" size={40} /></div>;
@@ -61,16 +69,21 @@ export default function BlogPost() {
 
   const sanitizedContent = DOMPurify.sanitize(post.content);
   
-  // Create a plain text description from content
-  const plainTextContent = sanitizedContent.replace(/<[^>]+>/g, '');
-  const description = plainTextContent.slice(0, 150) + (plainTextContent.length > 150 ? '...' : '');
+  const plainTextContent = post.content.replace(/<[^>]+>/g, '');
+  const fallbackDescription = plainTextContent.slice(0, 160) + (plainTextContent.length > 160 ? '...' : '');
+  
+  const allKeywords = [
+    ...(post.primaryKeyword ? [post.primaryKeyword] : []),
+    ...(post.secondaryKeywords || []),
+    ...(post.tags || [])
+  ];
 
   return (
     <div className="max-w-4xl mx-auto">
       <SEO 
-        title={post.title}
-        description={description}
-        keywords={post.tags}
+        title={post.metaTitle || post.title}
+        description={post.metaDescription || fallbackDescription}
+        keywords={allKeywords}
         image={post.imageUrl}
         type="article"
       />
@@ -81,7 +94,7 @@ export default function BlogPost() {
 
       <article>
         <header className="mb-8">
-           <div className="flex gap-2 mb-4">
+          <div className="flex gap-2 mb-4">
             {post.tags?.map(tag => (
               <span key={tag} className="text-xs font-medium text-accent bg-accent/10 px-2 py-1 rounded-full border border-accent/20">
                 #{tag}
@@ -92,23 +105,6 @@ export default function BlogPost() {
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
             {post.title}
           </h1>
-
-          <div className="flex items-center justify-between text-surface/60 border-y border-surface/10 py-4">
-            <div className="flex items-center gap-6">
-              <span className="flex items-center gap-2">
-                <UserIcon size={18} />
-                <span className="font-medium text-surface/80">{post.authorName}</span>
-              </span>
-              <span className="flex items-center gap-2">
-                <Calendar size={18} />
-                <span>{post.createdAt?.seconds ? format(new Date(post.createdAt.seconds * 1000), 'MMMM d, yyyy') : 'Unknown Date'}</span>
-              </span>
-            </div>
-            
-            <button className="flex items-center gap-2 hover:text-white transition-colors">
-              <Share2 size={18} /> <span className="hidden sm:inline">Share</span>
-            </button>
-          </div>
         </header>
 
         {post.imageUrl && (

@@ -9,15 +9,13 @@ import AdminDashboard from './pages/AdminDashboard';
 import BlogList from './pages/BlogList';
 import BlogPost from './pages/BlogPost';
 
-// Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, loading } = useAuth();
-  if (loading) return null; // Or a loading spinner
+  if (loading) return null;
   if (!currentUser) return <Navigate to="/login" />;
   return <>{children}</>;
 };
 
-// Admin Route Component
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, loading, isAdmin, isModerator } = useAuth();
   if (loading) return null;
@@ -36,31 +34,19 @@ function App() {
                <Route path="/" element={<Home />} />
                <Route path="/login" element={<Login />} />
                
-               {/* Public Blog Routes */}
                <Route path="/blog" element={<BlogList />} />
-               <Route path="/blog/:id" element={<BlogPost />} />
+               {/* Updated Route to use slug */}
+               <Route path="/blog/:slug" element={<BlogPost />} /> 
                
-               {/* Protected Routes */}
-               <Route path="/profile" element={
-                 <ProtectedRoute>
-                   <Profile />
-                 </ProtectedRoute>
-               } />
+               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                
-               {/* Admin Routes */}
-               <Route path="/admin" element={
-                 <AdminRoute>
-                   <AdminDashboard />
-                 </AdminRoute>
-               } />
+               {/* Optional: Redirect for old ID-based URLs if needed, though this is a simplification */}
+               <Route path="/blog/post/:id" element={<Navigate to="/blog" />} />
              </Routes>
            </main>
            
-           {/* Divider */}
-           <div className="container mx-auto px-4">
-            <hr className="border-t border-surface/10" />
-           </div>
-
+           <div className="container mx-auto px-4"><hr className="border-t border-surface/10" /></div>
            <Footer />
         </div>
       </Router>
