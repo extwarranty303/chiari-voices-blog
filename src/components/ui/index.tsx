@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 interface GlassPanelProps extends React.HTMLAttributes<HTMLDivElement> {
-  children?: React.ReactNode; // Made children optional
+  children?: React.ReactNode;
   className?: string;
 }
 
@@ -77,7 +77,11 @@ export function Input({ className, label, error, id, ...props }: InputProps) {
         id={inputId}
         aria-invalid={!!error}
         aria-describedby={error ? `${inputId}-error` : undefined}
-        className={cn("glass-input rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all", error ? "border-red-500 focus:ring-red-500/50" : "", className)}
+        className={cn(
+          "glass-input rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all border border-accent/30", // Added purple border
+          error ? "border-red-500 focus:ring-red-500/50" : "",
+          className
+        )}
         {...props} 
       />
       {error && <span id={`${inputId}-error`} className="text-xs text-red-400" role="alert">{error}</span>}
