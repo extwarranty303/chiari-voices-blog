@@ -1,290 +1,156 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { 
-  collection, addDoc, query, where, orderBy, onSnapshot, 
-  serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove
-} from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useAuth } from '../context/AuthContext';
+import { Button, Input, GlassPanel } from './ui';
+import { Send, Trash2, Flag } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { GlassPanel, Button } from './ui';
-import { MessageSquare, Heart, User as UserIcon, Smile } from 'lucide-react';
-import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 
 interface Comment {
   id: string;
-  postId: string;
-  parentId: string | null;
-  userId: string;
-  userName: string;
-  userAvatar?: string;
-  content: string;
+  text: string;
+  authorId: string;
+  authorName: string;
+  authorPhotoURL: string;
   createdAt: any;
-  likes: string[]; // Array of user IDs
-  replyCount?: number;
+  parentId: string | null;
+  reported?: boolean;
 }
 
-interface CommentsSectionProps {
-  postId: string;
+interface CommentProps {
+  comment: Comment;
+  onReply: (commentId: string) => void;
+  onDelete: (commentId: string) => void;
+  currentUserId: string | null;
+  isAdminOrModerator: boolean;
 }
 
-export default function CommentsSection({ postId }: CommentsSectionProps) {
-  const { currentUser } = useAuth();
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [newComment, setNewComment] = useState('');
-  const [replyTo, setReplyTo] = useState<string | null>(null);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [loading, setLoading] = useState(true);
+const CommentItem: React.FC<CommentProps> = ({ comment, onReply, onDelete, currentUserId, isAdminOrModerator }) => {
+    const [isReported, setIsReported] = useState(comment.reported || false);
 
-  useEffect(() => {
-    const q = query(
-      collection(db, 'comments'), 
-      where('postId', '==', postId),
-      orderBy('createdAt', 'asc') // Fetch all, then organize client-side for threading
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedComments = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Comment[];
-      setComments(fetchedComments);
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, [postId]);
-
-  const handleSubmit = async (parentId: string | null = null, content: string = newComment) => {
-    if (!currentUser || !content.trim()) return;
-
-    try {
-      await addDoc(collection(db, 'comments'), {
-        postId,
-        parentId,
-        userId: currentUser.uid,
-        userName: currentUser.displayName || 'Anonymous',
-        userAvatar: currentUser.photoURL,
-        content: content.trim(),
-        createdAt: serverTimestamp(),
-        likes: []
-      });
-
-      if (parentId) {
-        setReplyTo(null);
-      } else {
-        setNewComment('');
-        setShowEmojiPicker(false);
-      }
-    } catch (error) {
-      console.error("Error posting comment:", error);
-    }
-  };
-
-  const handleLike = async (commentId: string, currentLikes: string[]) => {
-    if (!currentUser) return;
-
-    const commentRef = doc(db, 'comments', commentId);
-    const isLiked = currentLikes.includes(currentUser.uid);
-
-    try {
-      await updateDoc(commentRef, {
-        likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
-      });
-    } catch (error) {
-      console.error("Error liking comment:", error);
-    }
-  };
-
-  const onEmojiClick = (emojiData: EmojiClickData) => {
-    setNewComment(prev => prev + emojiData.emoji);
-    setShowEmojiPicker(false);
-  };
-
-  // Organize comments into threads
-  const rootComments = comments.filter(c => !c.parentId);
-  const getReplies = (parentId: string) => comments.filter(c => c.parentId === parentId);
-
-  const CommentItem = ({ comment, depth = 0 }: { comment: Comment, depth?: number }) => {
-    const replies = getReplies(comment.id);
-    const [replyContent, setReplyContent] = useState('');
-    const [localShowEmoji, setLocalShowEmoji] = useState(false);
-    const isLiked = currentUser && comment.likes?.includes(currentUser.uid);
+    const handleReport = async () => {
+        if (isReported) return;
+        if (window.confirm("Are you sure you want to report this comment for review?")) {
+            const commentRef = doc(db, 'comments', comment.id);
+            await updateDoc(commentRef, { reported: true });
+            setIsReported(true);
+        }
+    };
 
     return (
-      <div className={`flex gap-3 mb-4 ${depth > 0 ? 'ml-6 md:ml-12 border-l-2 border-surface/10 pl-4' : ''}`}>
-        <div className="shrink-0">
-          {comment.userAvatar ? (
-            <img src={comment.userAvatar} alt={comment.userName} className="w-8 h-8 rounded-full object-cover" />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-surface/10 flex items-center justify-center">
-              <UserIcon size={14} className="text-surface/60" />
-            </div>
-          )}
-        </div>
-        
-        <div className="flex-grow min-w-0">
-          <div className="bg-surface/5 rounded-lg p-3 relative group">
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-sm text-white">{comment.userName}</span>
-              <span className="text-xs text-surface/40">
-                {comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
-              </span>
-            </div>
-            <p className="text-surface/80 text-sm whitespace-pre-wrap">{comment.content}</p>
-          </div>
-
-          <div className="flex items-center gap-4 mt-1 ml-1">
-            <button 
-              onClick={() => handleLike(comment.id, comment.likes || [])}
-              className={`text-xs flex items-center gap-1 hover:text-red-400 transition-colors ${isLiked ? 'text-red-400' : 'text-surface/40'}`}
-            >
-              <Heart size={12} fill={isLiked ? "currentColor" : "none"} />
-              {comment.likes?.length || 0}
-            </button>
-            
-            <button 
-              onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
-              className="text-xs flex items-center gap-1 text-surface/40 hover:text-accent transition-colors"
-            >
-              <MessageSquare size={12} /> Reply
-            </button>
-          </div>
-
-          {/* Reply Input */}
-          {replyTo === comment.id && (
-            <div className="mt-3 animate-in fade-in slide-in-from-top-2">
-              <div className="flex gap-2">
-                <div className="relative flex-grow">
-                   <input
-                    type="text"
-                    value={replyContent}
-                    onChange={(e) => setReplyContent(e.target.value)}
-                    placeholder={`Reply to ${comment.userName}...`}
-                    className="w-full bg-black/20 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-accent/50"
-                    autoFocus
-                  />
-                   <button 
-                    type="button"
-                    onClick={() => setLocalShowEmoji(!localShowEmoji)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-surface/40 hover:text-accent"
-                  >
-                    <Smile size={16} />
-                  </button>
-                   {localShowEmoji && (
-                      <div className="absolute right-0 bottom-full mb-2 z-10">
-                        <EmojiPicker 
-                          onEmojiClick={(emoji) => {
-                            setReplyContent(prev => prev + emoji.emoji);
-                            setLocalShowEmoji(false);
-                          }} 
-                          theme={Theme.DARK} 
-                          width={300} 
-                          height={400}
-                        />
-                      </div>
-                    )}
+        <div className="flex items-start gap-4">
+            <img src={comment.authorPhotoURL || '/default-avatar.png'} alt={comment.authorName} className="w-10 h-10 rounded-full" />
+            <div className="flex-1">
+                <div className="flex items-center gap-2">
+                    <span className="font-bold text-white">{comment.authorName}</span>
+                    <span className="text-xs text-surface/60">{formatDistanceToNow(new Date(comment.createdAt?.seconds * 1000), { addSuffix: true })}</span>
                 </div>
-                <Button 
-                  size="sm" 
-                  onClick={() => {
-                    handleSubmit(comment.id, replyContent);
-                    setReplyContent('');
-                  }}
-                  disabled={!replyContent.trim()}
-                >
-                  Reply
-                </Button>
+                <p className="text-surface/80 mt-1">{comment.text}</p>
+                <div className="flex items-center gap-4 mt-2 text-xs">
+                    <button onClick={() => onReply(comment.id)} className="text-accent hover:underline">Reply</button>
+                    {(isAdminOrModerator || currentUserId === comment.authorId) && (
+                        <button onClick={() => onDelete(comment.id)} className="text-red-400 hover:underline">Delete</button>
+                    )}
+                    {currentUserId && !isReported && (
+                        <button onClick={handleReport} className="text-surface/50 hover:text-yellow-400 flex items-center gap-1">
+                            <Flag size={12} /> Report
+                        </button>
+                    )}
+                    {isReported && <span className="text-yellow-400 text-xs">Reported</span>}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+export default function CommentsSection({ postId }: { postId: string }) {
+  const { currentUser, isAdmin, isModerator } = useAuth();
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+
+  useEffect(() => {
+    const q = query(collection(db, 'comments'), where('postId', '==', postId), orderBy('createdAt', 'asc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedComments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Comment[];
+      setComments(fetchedComments);
+    });
+    return () => unsubscribe();
+  }, [postId]);
+
+  const handlePostComment = async () => {
+    if (!newComment.trim() || !currentUser) return;
+
+    await addDoc(collection(db, 'comments'), {
+      postId,
+      text: newComment,
+      authorId: currentUser.uid,
+      authorName: currentUser.displayName || 'Anonymous',
+      authorPhotoURL: currentUser.photoURL || '',
+      createdAt: serverTimestamp(),
+      parentId: replyingTo,
+      reported: false,
+    });
+
+    setNewComment('');
+    setReplyingTo(null);
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (window.confirm("Are you sure you want to delete this comment?")) {
+        await deleteDoc(doc(db, 'comments', commentId));
+    }
+  };
+  
+  const buildCommentTree = (commentList: Comment[], parentId: string | null = null): JSX.Element[] => {
+    return commentList
+      .filter(comment => comment.parentId === parentId)
+      .map(comment => (
+        <div key={comment.id} className={parentId ? 'ml-8 mt-4 border-l-2 border-surface/10 pl-4' : 'mt-6'}>
+          <CommentItem 
+            comment={comment} 
+            onReply={setReplyingTo} 
+            onDelete={handleDeleteComment} 
+            currentUserId={currentUser?.uid || null}
+            isAdminOrModerator={isAdmin || isModerator}
+          />
+          {buildCommentTree(commentList, comment.id)}
+          {replyingTo === comment.id && (
+            <div className="mt-4 ml-8">
+              <Input value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder={`Replying to ${comment.authorName}...`} />
+              <div className="flex gap-2 mt-2">
+                <Button onClick={handlePostComment} size="sm">Post Reply</Button>
+                <Button onClick={() => setReplyingTo(null)} size="sm" variant="ghost">Cancel</Button>
               </div>
             </div>
           )}
-
-          {/* Recursive Replies */}
-          {replies.length > 0 && (
-            <div className="mt-3">
-              {replies.map(reply => (
-                <CommentItem key={reply.id} comment={reply} depth={depth + 1} />
-              ))}
-            </div>
-          )}
         </div>
-      </div>
-    );
+      ));
   };
 
   return (
-    <div className="mt-12 pt-8 border-t border-surface/10">
-      <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-        Discussion <span className="text-sm font-normal text-surface/40 bg-surface/5 px-2 py-0.5 rounded-full">{comments.length}</span>
-      </h3>
-
-      {/* Main Comment Input */}
+    <GlassPanel>
+      <h3 className="text-2xl font-bold text-white mb-6">{comments.length} Comment{comments.length !== 1 && 's'}</h3>
       {currentUser ? (
-        <div className="mb-8 flex gap-4">
-          <div className="shrink-0">
-             {currentUser.photoURL ? (
-                <img src={currentUser.photoURL} alt={currentUser.displayName || ''} className="w-10 h-10 rounded-full object-cover" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-surface/10 flex items-center justify-center">
-                  <UserIcon size={20} className="text-surface/60" />
-                </div>
-              )}
-          </div>
-          <div className="flex-grow space-y-2">
-            <div className="relative">
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="What are your thoughts?"
-                className="w-full h-24 bg-black/20 rounded-lg p-4 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none"
-              />
-              <button 
-                type="button"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="absolute right-3 bottom-3 text-surface/40 hover:text-accent transition-colors"
-              >
-                <Smile size={20} />
-              </button>
-              {showEmojiPicker && (
-                <div className="absolute right-0 top-full mt-2 z-10 shadow-xl">
-                  <EmojiPicker 
-                    onEmojiClick={onEmojiClick} 
-                    theme={Theme.DARK} 
-                    width={300} 
-                    height={400}
-                  />
-                </div>
-              )}
+        !replyingTo && (
+            <div className="flex gap-4 items-start">
+              <img src={currentUser.photoURL || '/default-avatar.png'} alt={currentUser.displayName || ''} className="w-10 h-10 rounded-full" />
+              <div className="flex-1">
+                <Input value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Join the discussion..." />
+                <Button onClick={handlePostComment} className="mt-2" size="sm" disabled={!newComment.trim()}>
+                    <Send size={14} /> Post Comment
+                </Button>
+              </div>
             </div>
-            <div className="flex justify-end">
-              <Button onClick={() => handleSubmit(null)} disabled={!newComment.trim()}>
-                Post Comment
-              </Button>
-            </div>
-          </div>
-        </div>
+        )
       ) : (
-        <GlassPanel className="text-center py-6 mb-8">
-          <p className="text-surface/60 mb-3">Join the conversation</p>
-          <Button variant="outline" onClick={() => window.location.href='/login'}>
-            Log In to Comment
-          </Button>
-        </GlassPanel>
+        <p className="text-surface/60">Please log in to post a comment.</p>
       )}
 
-      {/* Comment List */}
-      <div className="space-y-6">
-        {loading ? (
-          <div className="text-center text-surface/40 py-4">Loading comments...</div>
-        ) : rootComments.length > 0 ? (
-          rootComments.map(comment => (
-            <CommentItem key={comment.id} comment={comment} />
-          ))
-        ) : (
-          <div className="text-center text-surface/40 py-8 italic">
-            No comments yet. Be the first to share your thoughts!
-          </div>
-        )}
+      <div>
+        {buildCommentTree(comments)}
       </div>
-    </div>
+    </GlassPanel>
   );
 }

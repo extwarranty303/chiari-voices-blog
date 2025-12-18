@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User as UserIcon } from 'lucide-react';
+import { Menu, X, User as UserIcon, ExternalLink } from 'lucide-react';
 import { Button, GlassPanel } from '../ui';
 import { useAuth } from '../../context/AuthContext';
 
@@ -34,6 +34,14 @@ export function Header() {
           >
             Blog
           </Link>
+          <a 
+            href="https://chiarivoices.org" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-sm font-medium transition-colors text-surface hover:text-accent"
+          >
+            Main Site <ExternalLink size={14} />
+          </a>
           
           {(isAdmin || isModerator) && (
             <Link 
@@ -89,6 +97,15 @@ export function Header() {
           >
             Blog
           </Link>
+          <a 
+            href="https://chiarivoices.org" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-lg font-medium text-surface"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Main Site <ExternalLink size={18} />
+          </a>
           {(isAdmin || isModerator) && (
              <Link 
               to="/admin" 

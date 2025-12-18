@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminComments from './pages/AdminComments'; // Import the new page
 import BlogList from './pages/BlogList';
 import BlogPost from './pages/BlogPost';
 
@@ -35,14 +36,14 @@ function App() {
                <Route path="/login" element={<Login />} />
                
                <Route path="/blog" element={<BlogList />} />
-               {/* Updated Route to use slug */}
                <Route path="/blog/:slug" element={<BlogPost />} /> 
                
                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                
-               {/* Optional: Redirect for old ID-based URLs if needed, though this is a simplification */}
-               <Route path="/blog/post/:id" element={<Navigate to="/blog" />} />
+               {/* Admin Routes */}
+               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+               <Route path="/admin/comments" element={<AdminRoute><AdminComments /></AdminRoute>} />
+
              </Routes>
            </main>
            

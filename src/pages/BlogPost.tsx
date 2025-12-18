@@ -3,7 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { GlassPanel } from '../components/ui';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Calendar, User as UserIcon, ArrowLeft, Loader2, Share2 } from 'lucide-react';
+import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
 import CommentsSection from '../components/CommentsSection';
 import SEO from '../components/SEO';
@@ -15,7 +16,7 @@ interface BlogPost {
   imageUrl?: string;
   tags?: string[];
   createdAt: any;
-  authorName: string;
+  authorName: string; // This will be ignored, but kept for data structure
   metaTitle?: string;
   metaDescription?: string;
   slug?: string;
@@ -94,7 +95,7 @@ export default function BlogPost() {
 
       <article>
         <header className="mb-8">
-          <div className="flex gap-2 mb-4">
+           <div className="flex gap-2 mb-4">
             {post.tags?.map(tag => (
               <span key={tag} className="text-xs font-medium text-accent bg-accent/10 px-2 py-1 rounded-full border border-accent/20">
                 #{tag}
@@ -105,6 +106,23 @@ export default function BlogPost() {
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
             {post.title}
           </h1>
+
+          <div className="flex items-center justify-between text-surface/60 border-y border-surface/10 py-4">
+            <div className="flex items-center gap-6">
+              <span className="flex items-center gap-2">
+                <UserIcon size={18} />
+                <span className="font-medium text-surface/80">Chiari Voices Admin</span>
+              </span>
+              <span className="flex items-center gap-2">
+                <Calendar size={18} />
+                <span>{post.createdAt?.seconds ? format(new Date(post.createdAt.seconds * 1000), 'MMMM d, yyyy') : 'Unknown Date'}</span>
+              </span>
+            </div>
+            
+            <button className="flex items-center gap-2 hover:text-white transition-colors">
+              <Share2 size={18} /> <span className="hidden sm:inline">Share</span>
+            </button>
+          </div>
         </header>
 
         {post.imageUrl && (
