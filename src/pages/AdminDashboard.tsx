@@ -1,20 +1,18 @@
-import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
-import { Link } from 'react-router-dom'; // Import Link
+import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
-import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
-import { GlassPanel, Button } from '../components/ui';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { GlassPanel, Button, cn } from '../components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Plus, Edit2, FileText, CheckCircle, Pencil, MessageSquare, Flag } from 'lucide-react';
-import { cn } from '../components/ui';
+import { Plus, Edit2, FileText, CheckCircle, Pencil, Flag } from 'lucide-react';
 
 const PostEditor = lazy(() => import('../components/PostEditor'));
 
-// ... (interfaces remain the same) ...
 interface Post {
   id: string;
   title: string;
+  content: string;
   status: 'draft' | 'published';
   createdAt: any;
 }
@@ -31,7 +29,6 @@ interface DashboardStats {
   totalComments: number;
   reportedComments: number;
 }
-
 
 export default function AdminDashboard() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -52,7 +49,7 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const postsQuery = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
-      const commentsQuery = query(collection(db, 'comments'));
+      const commentsQuery = collection(db, 'comments');
       
       const [postsSnapshot, commentsSnapshot] = await Promise.all([
         getDocs(postsQuery),
@@ -97,12 +94,12 @@ export default function AdminDashboard() {
   }, [posts, filter]);
   
   if (authLoading || loading) {
-    return <div className="text-center p-8">Loading Dashboard...</div>;
+    return <div className="text-center p-8 text-surface/60">Loading Dashboard...</div>;
   }
 
   if (isEditing) {
     return (
-      <Suspense fallback={<div>Loading Editor...</div>}>
+      <Suspense fallback={<div className="text-center p-8 text-surface/60">Loading Editor...</div>}>
         <PostEditor post={editingPost} onClose={handleCloseEditor} />
       </Suspense>
     );
@@ -117,16 +114,16 @@ export default function AdminDashboard() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <button onClick={() => setFilter('all')} className={cn('text-left transition-transform duration-200 hover:-translate-y-1', filter === 'all' && 'ring-2 ring-accent rounded-xl')}>
-            <Card><CardHeader><CardTitle>Total Posts</CardTitle><FileText className="text-surface/60" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalPosts}</div></CardContent></Card>
+            <Card><CardHeader><CardTitle>Total Posts</CardTitle><FileText className="text-surface/60" /></CardHeader><CardContent><div className="text-2xl font-bold text-white">{stats.totalPosts}</div></CardContent></Card>
         </button>
         <button onClick={() => setFilter('published')} className={cn('text-left transition-transform duration-200 hover:-translate-y-1', filter === 'published' && 'ring-2 ring-accent rounded-xl')}>
-            <Card><CardHeader><CardTitle>Published</CardTitle><CheckCircle className="text-green-400" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.publishedPosts}</div></CardContent></Card>
+            <Card><CardHeader><CardTitle>Published</CardTitle><CheckCircle className="text-green-400" /></CardHeader><CardContent><div className="text-2xl font-bold text-white">{stats.publishedPosts}</div></CardContent></Card>
         </button>
         <button onClick={() => setFilter('draft')} className={cn('text-left transition-transform duration-200 hover:-translate-y-1', filter === 'draft' && 'ring-2 ring-accent rounded-xl')}>
-            <Card><CardHeader><CardTitle>Drafts</CardTitle><Pencil className="text-yellow-400" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.draftPosts}</div></CardContent></Card>
+            <Card><CardHeader><CardTitle>Drafts</CardTitle><Pencil className="text-yellow-400" /></CardHeader><CardContent><div className="text-2xl font-bold text-white">{stats.draftPosts}</div></CardContent></Card>
         </button>
         <Link to="/admin/comments" className="transition-transform duration-200 hover:-translate-y-1">
-            <Card><CardHeader><CardTitle>Reported Comments</CardTitle><Flag className="text-red-400" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.reportedComments}</div></CardContent></Card>
+            <Card><CardHeader><CardTitle>Reported Comments</CardTitle><Flag className="text-red-400" /></CardHeader><CardContent><div className="text-2xl font-bold text-white">{stats.reportedComments}</div></CardContent></Card>
         </Link>
       </div>
 

@@ -14,7 +14,6 @@ interface Post {
     title: string;
     content: string;
     status: 'draft' | 'published';
-    // Add all other post fields here
 }
 
 interface PostEditorProps {
@@ -36,7 +35,6 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
     const [tags, setTags] = useState<string[]>([]);
     const [tagInput, setTagInput] = useState('');
     const [postImage, setPostImage] = useState('');
-    const [readTime, setReadTime] = useState('');
     const [status, setStatus] = useState<'draft' | 'published'>('draft');
 
     const [metaTitle, setMetaTitle] = useState('');
@@ -47,15 +45,13 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
   
     const [showAiIdeas, setShowAiIdeas] = useState(false);
     const [ideaTopic, setIdeaTopic] = useState('');
-    const [generatedIdeas, setGeneratedIdeas] = useState<string[]>([]);
 
     useEffect(() => {
         if (post) {
             setTitle(post.title);
-            setContent((post as any).content || '');
+            setContent(post.content || '');
             setTags((post as any).tags || []);
             setPostImage((post as any).imageUrl || '');
-            setReadTime((post as any).readTime || '');
             setStatus(post.status);
             setMetaTitle((post as any).metaTitle || '');
             setMetaDescription((post as any).metaDescription || '');
@@ -69,14 +65,12 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
         if (title && !post) setSlug(generateSlug(title));
     }, [title, post]);
 
-    const runAiHelper = useCallback(async (type: 'readTime' | 'tags' | 'ideas') => {
+    const runAiHelper = useCallback(async (type: 'tags' | 'ideas') => {
         setAiLoading(true);
         try {
           const blogAiHelper = httpsCallable(functions, 'blogAiHelper');
           const result: any = await blogAiHelper({ type, content, topic: ideaTopic });
-          if (result.data.readTime) setReadTime(result.data.readTime);
           if (result.data.tags) setTags(prev => [...new Set([...prev, ...result.data.tags])]);
-          if (result.data.ideas) setGeneratedIdeas(result.data.ideas);
         } catch (error) {
           console.error(`AI Helper Error (${type}):`, error);
           alert("AI helper failed.");
@@ -84,12 +78,6 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
           setAiLoading(false);
         }
     }, [content, ideaTopic]);
-
-    useEffect(() => {
-        if (!content || content.length < 100) return;
-        const timer = setTimeout(() => runAiHelper('readTime'), 2000);
-        return () => clearTimeout(timer);
-    }, [content, runAiHelper]);
 
     const handleSave = async (publish: boolean) => {
         if (!currentUser || !title.trim()) return alert("Title is required.");
@@ -102,7 +90,7 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
         const excerpt = (tempDiv.textContent || '').slice(0, 150) + '...';
 
         const postData = {
-            title, content, excerpt, tags, imageUrl: postImage, readTime, status: newStatus,
+            title, content, excerpt, tags, imageUrl: postImage, status: newStatus,
             authorId: currentUser.uid, authorName: 'Chiari Voices Admin', updatedAt: serverTimestamp(),
             metaTitle: metaTitle || title, metaDescription, slug: slug || generateSlug(title),
             primaryKeyword, secondaryKeywords: secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean),
@@ -158,15 +146,21 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
                             <Button type="button" size="sm" variant="secondary" onClick={() => setShowAiIdeas(!showAiIdeas)}><Lightbulb size={14} /> AI Ideas</Button>
                             <Button type="button" size="sm" variant="secondary" onClick={() => runAiHelper('tags')} disabled={aiLoading || !content}><Tags size={14} /> Gen Tags</Button>
                         </div>
-                        {showAiIdeas && <div className="bg-accent/10 p-4 rounded-lg">{/* AI Ideas JSX */}</div>}
+                        {showAiIdeas && (
+                            <div className="bg-accent/10 p-4 rounded-lg">
+                                <div className="flex gap-2 mb-3">
+                                    <Input placeholder="Enter a topic..." value={ideaTopic} onChange={(e) => setIdeaTopic(e.target.value)} className="bg-black/20" />
+                                    <Button type="button" onClick={() => runAiHelper('ideas')} disabled={aiLoading || !ideaTopic}>{aiLoading ? '...' : 'Go'}</Button>
+                                </div>
+                            </div>
+                        )}
                         <Input label="Post Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
                         <div className="border border-accent/30 rounded-lg p-1">
                             <Suspense fallback={<div>Loading Editor...</div>}><Editor value={content} onChange={setContent} /></Suspense>
                         </div>
                     </div>
                     <div className="space-y-6">
-                        <div><label className="text-sm font-medium">Read Time</label><div className="glass-input rounded-lg px-4 py-2 mt-1 border border-accent/30 min-h-[42px] flex items-center">{aiLoading && !readTime ? 'Calculating...' : readTime || 'Auto-calculated'}</div></div>
-                        <div><label className="text-sm font-medium">Cover Image</label><div className="relative h-40 mt-2 border-2 border-dashed border-accent/30 rounded-lg flex items-center justify-center">{postImage ? <><img src={postImage} alt="Cover" className="w-full h-full object-cover" /><button type="button" onClick={() => setPostImage('')} className="absolute top-2 right-2 bg-black/50 p-1 rounded-full"><X size={14} /></button></> : <label className="cursor-pointer"><ImageIcon className="mb-2" /><span>Click to upload</span><input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} /></label>}</div></div>
+                        <div><label className="text-sm font-medium">Cover Image</label><div className="relative h-40 mt-2 border-2 border-dashed border-accent/30 rounded-lg flex items-center justify-center">{postImage ? <><img src={postImage} alt="Cover" className="w-full h-full object-cover" /><button type="button" onClick={() => setPostImage('')} className="absolute top-2 right-2 bg-black/50 p-1 rounded-full"><X size={14} /></button></> : <label className="cursor-pointer flex flex-col items-center p-4 w-full h-full justify-center"><ImageIcon className="mb-2" /><span>Click to upload</span><input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} /></label>}</div></div>
                         <div><label className="text-sm font-medium">Tags</label><Input placeholder="Type & press Enter..." value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleAddTag} /><div className="flex flex-wrap gap-2 mt-2">{tags.map(tag => <span key={tag} className="px-2 py-1 rounded-md bg-accent/20 text-xs">{tag}<button type="button" onClick={() => removeTag(tag)} className="ml-1"><X size={12} /></button></span>)}</div></div>
                     </div>
                 </div>

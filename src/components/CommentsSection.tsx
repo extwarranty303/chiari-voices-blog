@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { Button, Input, GlassPanel } from './ui';
-import { Send, Trash2, Flag } from 'lucide-react';
+import { Send, Flag } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Comment {
@@ -103,7 +103,7 @@ export default function CommentsSection({ postId }: { postId: string }) {
     }
   };
   
-  const buildCommentTree = (commentList: Comment[], parentId: string | null = null): JSX.Element[] => {
+  const buildCommentTree = (commentList: Comment[], parentId: string | null = null): React.ReactNode[] => {
     return commentList
       .filter(comment => comment.parentId === parentId)
       .map(comment => (

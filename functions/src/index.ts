@@ -3,6 +3,7 @@ import * as logger from "firebase-functions/logger";
 
 // Export the consolidated Genkit flow as a Firebase Function
 export { blogAiHelper } from './ai';
+export { sitemap } from './sitemap'; // Added sitemap export
 
 export const helloWorld = onRequest((request, response) => {
   logger.info("Hello logs!", {structuredData: true});
