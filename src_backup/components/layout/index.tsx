@@ -1,80 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User as UserIcon, ExternalLink, BookOpen, BookOpenCheck, Shield, Settings } from 'lucide-react';
-import { Button, GlassPanel, Dropdown, DropdownItem } from '../ui';
+import { Menu, X, User as UserIcon, ExternalLink } from 'lucide-react';
+import { Button, GlassPanel } from '../ui';
 import { useAuth } from '../../context/AuthContext';
-import '../../open-dyslexic.css';
-import '../../symptom-safe.css';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDyslexicFont, setIsDyslexicFont] = useState(false);
-  const [isSymptomSafe, setIsSymptomSafe] = useState(false);
   const location = useLocation();
   const { currentUser, logout, isAdmin, isModerator } = useAuth();
 
-  useEffect(() => {
-    if (isDyslexicFont) {
-      document.body.classList.add('opendyslexic-font');
-    } else {
-      document.body.classList.remove('opendyslexic-font');
-    }
-  }, [isDyslexicFont]);
-
-  useEffect(() => {
-    if (isSymptomSafe) {
-      document.body.classList.add('symptom-safe');
-    } else {
-      document.body.classList.remove('symptom-safe');
-    }
-  }, [isSymptomSafe]);
-
   const isActive = (path: string) => location.pathname === path;
-
-  const toggleDyslexicFont = () => {
-    setIsDyslexicFont(!isDyslexicFont);
-  };
-
-  const toggleSymptomSafe = () => {
-    setIsSymptomSafe(!isSymptomSafe);
-  };
-
-  const UserMenu = () => (
-    <Dropdown 
-      trigger={
-        <Button variant="ghost" size="icon">
-          <UserIcon size={20} />
-        </Button>
-      }
-    >
-      <Link to="/profile"><DropdownItem>Profile</DropdownItem></Link>
-      <Link to="/journal"><DropdownItem>Journal</DropdownItem></Link>
-      <DropdownItem><button onClick={logout}>Log Out</button></DropdownItem>
-    </Dropdown>
-  );
-
-  const AccessibilityMenu = () => (
-    <Dropdown
-      trigger={
-        <Button variant="ghost" size="icon">
-          <Settings size={20} />
-        </Button>
-      }
-    >
-      <DropdownItem>
-        <button onClick={toggleDyslexicFont} className="flex items-center gap-2 w-full">
-          {isDyslexicFont ? <BookOpenCheck size={16} /> : <BookOpen size={16} />}
-          <span>{isDyslexicFont ? "Default Font" : "Dyslexic Font"}</span>
-        </button>
-      </DropdownItem>
-      <DropdownItem>
-        <button onClick={toggleSymptomSafe} className="flex items-center gap-2 w-full">
-          <Shield size={16} />
-          <span>{isSymptomSafe ? "Default Mode" : "Symptom-Safe"}</span>
-        </button>
-      </DropdownItem>
-    </Dropdown>
-  )
 
   return (
     <header className="sticky top-0 z-50 w-full p-4">
@@ -86,7 +21,7 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-8">
           <Link 
             to="/" 
             className={`text-sm font-medium transition-colors hover:text-accent ${isActive('/') ? 'text-accent' : 'text-surface'}`}
@@ -94,10 +29,10 @@ export function Header() {
             Home
           </Link>
           <Link 
-            to="/posts" 
-            className={`text-sm font-medium transition-colors hover:text-accent ${isActive('/posts') ? 'text-accent' : 'text-surface'}`}
+            to="/blog" 
+            className={`text-sm font-medium transition-colors hover:text-accent ${isActive('/blog') ? 'text-accent' : 'text-surface'}`}
           >
-            Posts
+            Blog
           </Link>
           <a 
             href="https://chiarivoices.org" 
@@ -117,10 +52,18 @@ export function Header() {
             </Link>
           )}
           
-          <AccessibilityMenu />
-
           {currentUser ? (
-            <UserMenu />
+            <div className="flex items-center gap-4">
+               <Link to="/profile">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <UserIcon size={16} />
+                    Profile
+                  </Button>
+               </Link>
+               <Button variant="secondary" size="sm" onClick={logout}>
+                 Log Out
+               </Button>
+            </div>
           ) : (
              <Link to="/login">
               <Button size="sm">Log In</Button>
@@ -148,11 +91,11 @@ export function Header() {
             Home
           </Link>
           <Link 
-            to="/posts" 
+            to="/blog" 
             onClick={() => setIsMenuOpen(false)}
-            className={`text-lg font-medium ${isActive('/posts') ? 'text-accent' : 'text-surface'}`}
+            className={`text-lg font-medium ${isActive('/blog') ? 'text-accent' : 'text-surface'}`}
           >
-            Posts
+            Blog
           </Link>
           <a 
             href="https://chiarivoices.org" 
@@ -163,24 +106,6 @@ export function Header() {
           >
             Main Site <ExternalLink size={18} />
           </a>
-          {currentUser && (
-            <>
-              <Link
-                to="/journal"
-                onClick={() => setIsMenuOpen(false)}
-                className={`text-lg font-medium ${isActive('/journal') ? 'text-accent' : 'text-surface'}`}
-              >
-                Journal
-              </Link>
-              <Link
-                to="/profile"
-                onClick={() => setIsMenuOpen(false)}
-                className={`text-lg font-medium ${isActive('/profile') ? 'text-accent' : 'text-surface'}`}
-              >
-                Profile
-              </Link>
-            </>
-          )}
           {(isAdmin || isModerator) && (
              <Link 
               to="/admin" 
@@ -190,24 +115,16 @@ export function Header() {
               Admin Dashboard
             </Link>
           )}
-
-          <div className="border-t border-surface/20 my-4" />
-          
-          <button onClick={toggleDyslexicFont} className="flex items-center gap-2 text-lg font-medium text-surface">
-            {isDyslexicFont ? <BookOpenCheck size={20} /> : <BookOpen size={20} />}
-            <span>{isDyslexicFont ? "Default Font" : "Dyslexic Font"}</span>
-          </button>
-          <button onClick={toggleSymptomSafe} className="flex items-center gap-2 text-lg font-medium text-surface">
-            <Shield size={20} />
-            <span>{isSymptomSafe ? "Default Mode" : "Symptom-Safe"}</span>
-          </button>
-
-          <div className="border-t border-surface/20 my-4" />
           
            {currentUser ? (
-              <Button variant="secondary" onClick={() => { logout(); setIsMenuOpen(false); }}>
-                Log Out
-              </Button>
+            <>
+               <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                  <span className="text-lg font-medium text-surface">Profile</span>
+               </Link>
+               <Button variant="secondary" onClick={() => { logout(); setIsMenuOpen(false); }}>
+                 Log Out
+               </Button>
+            </>
           ) : (
              <Link to="/login" onClick={() => setIsMenuOpen(false)}>
               <Button className="w-full">Log In</Button>

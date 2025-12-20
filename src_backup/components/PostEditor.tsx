@@ -5,8 +5,7 @@ import { httpsCallable } from 'firebase/functions';
 import { collection, setDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { GlassPanel, Button, Input } from './ui';
-import { X, Image as ImageIcon, Tags, Lightbulb, Clock } from 'lucide-react';
-import { calculateReadTime } from '../utils/readTime';
+import { X, Image as ImageIcon, Tags, Lightbulb } from 'lucide-react';
 
 const Editor = lazy(() => import('./Editor'));
 
@@ -15,7 +14,6 @@ interface Post {
     title: string;
     content: string;
     status: 'draft' | 'published';
-    readTime?: number;
 }
 
 interface PostEditorProps {
@@ -38,7 +36,6 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
     const [tagInput, setTagInput] = useState('');
     const [postImage, setPostImage] = useState('');
     const [status, setStatus] = useState<'draft' | 'published'>('draft');
-    const [readTime, setReadTime] = useState(0);
 
     const [metaTitle, setMetaTitle] = useState('');
     const [metaDescription, setMetaDescription] = useState('');
@@ -56,7 +53,6 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
             setTags((post as any).tags || []);
             setPostImage((post as any).imageUrl || '');
             setStatus(post.status);
-            setReadTime(post.readTime || 0);
             setMetaTitle((post as any).metaTitle || '');
             setMetaDescription((post as any).metaDescription || '');
             setSlug((post as any).slug || '');
@@ -68,11 +64,6 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
     useEffect(() => {
         if (title && !post) setSlug(generateSlug(title));
     }, [title, post]);
-
-    useEffect(() => {
-        const time = calculateReadTime(content);
-        setReadTime(time);
-    }, [content]);
 
     const runAiHelper = useCallback(async (type: 'tags' | 'ideas') => {
         setAiLoading(true);
@@ -99,7 +90,7 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
         const excerpt = (tempDiv.textContent || '').slice(0, 150) + '...';
 
         const postData = {
-            title, content, excerpt, tags, imageUrl: postImage, status: newStatus, readTime,
+            title, content, excerpt, tags, imageUrl: postImage, status: newStatus,
             authorId: currentUser.uid, authorName: 'Chiari Voices Admin', updatedAt: serverTimestamp(),
             metaTitle: metaTitle || title, metaDescription, slug: slug || generateSlug(title),
             primaryKeyword, secondaryKeywords: secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean),
@@ -171,7 +162,6 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
                     <div className="space-y-6">
                         <div><label className="text-sm font-medium">Cover Image</label><div className="relative h-40 mt-2 border-2 border-dashed border-accent/30 rounded-lg flex items-center justify-center">{postImage ? <><img src={postImage} alt="Cover" className="w-full h-full object-cover" /><button type="button" onClick={() => setPostImage('')} className="absolute top-2 right-2 bg-black/50 p-1 rounded-full"><X size={14} /></button></> : <label className="cursor-pointer flex flex-col items-center p-4 w-full h-full justify-center"><ImageIcon className="mb-2" /><span>Click to upload</span><input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} /></label>}</div></div>
                         <div><label className="text-sm font-medium">Tags</label><Input placeholder="Type & press Enter..." value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleAddTag} /><div className="flex flex-wrap gap-2 mt-2">{tags.map(tag => <span key={tag} className="px-2 py-1 rounded-md bg-accent/20 text-xs">{tag}<button type="button" onClick={() => removeTag(tag)} className="ml-1"><X size={12} /></button></span>)}</div></div>
-                        <div className="flex items-center gap-2 text-surface/60"><Clock size={14} /><span>~{readTime} min read</span></div>
                     </div>
                 </div>
                 <div className="pt-6 border-t border-surface/10"><h3 className="text-lg font-bold mb-4">SEO Settings</h3><div className="space-y-4"><Input label="Meta Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} /><Input label="Meta Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} /><Input label="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} /><Input label="Primary Keyword" value={primaryKeyword} onChange={(e) => setPrimaryKeyword(e.target.value)} /><Input label="Secondary Keywords" value={secondaryKeywords} onChange={(e) => setSecondaryKeywords(e.target.value)} placeholder="Comma, separated" /></div></div>

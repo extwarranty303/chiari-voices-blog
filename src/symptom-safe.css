@@ -1,0 +1,10 @@
+.symptom-safe {
+  --color-background: #000000;
+  --color-surface: #FFFFFF;
+  --color-accent: #00FF00;
+
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

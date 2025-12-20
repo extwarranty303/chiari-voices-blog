@@ -6,10 +6,9 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/AdminDashboard';
-import AdminComments from './pages/AdminComments';
-import PostListPage from './pages/PostListPage';
-import PostPage from './pages/PostPage';
-import JournalPage from './pages/Journal'; // Import the new page
+import AdminComments from './pages/AdminComments'; // Import the new page
+import BlogList from './pages/BlogList';
+import BlogPost from './pages/BlogPost';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser, loading } = useAuth();
@@ -36,12 +35,11 @@ function App() {
                <Route path="/" element={<Home />} />
                <Route path="/login" element={<Login />} />
                
-               <Route path="/posts" element={<PostListPage />} />
-               <Route path="/posts/:slug" element={<PostPage />} /> 
+               <Route path="/blog" element={<BlogList />} />
+               <Route path="/blog/:slug" element={<BlogPost />} /> 
                
                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-               <Route path="/journal" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
-
+               
                {/* Admin Routes */}
                <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                <Route path="/admin/comments" element={<AdminRoute><AdminComments /></AdminRoute>} />

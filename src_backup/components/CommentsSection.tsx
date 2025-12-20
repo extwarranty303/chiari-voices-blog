@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { Button, Input, GlassPanel } from './ui';
-import { Send, Flag, Heart } from 'lucide-react';
+import { Send, Flag } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Comment {
@@ -15,7 +15,6 @@ interface Comment {
   createdAt: any;
   parentId: string | null;
   reported?: boolean;
-  likes?: string[];
 }
 
 interface CommentProps {
@@ -37,16 +36,6 @@ const CommentItem: React.FC<CommentProps> = ({ comment, onReply, onDelete, curre
             setIsReported(true);
         }
     };
-    
-    const handleLike = async () => {
-        if (!currentUserId) return;
-        const commentRef = doc(db, 'comments', comment.id);
-        if (comment.likes?.includes(currentUserId)) {
-            await updateDoc(commentRef, { likes: arrayRemove(currentUserId) });
-        } else {
-            await updateDoc(commentRef, { likes: arrayUnion(currentUserId) });
-        }
-    };
 
     return (
         <div className="flex items-start gap-4">
@@ -59,10 +48,6 @@ const CommentItem: React.FC<CommentProps> = ({ comment, onReply, onDelete, curre
                 <p className="text-surface/80 mt-1">{comment.text}</p>
                 <div className="flex items-center gap-4 mt-2 text-xs">
                     <button onClick={() => onReply(comment.id)} className="text-accent hover:underline">Reply</button>
-                    <button onClick={handleLike} className="flex items-center gap-1 text-surface/50 hover:text-pink-400">
-                        <Heart size={12} className={comment.likes?.includes(currentUserId || '') ? 'text-pink-400 fill-current' : ''}/> 
-                        {comment.likes?.length || 0}
-                    </button>
                     {(isAdminOrModerator || currentUserId === comment.authorId) && (
                         <button onClick={() => onDelete(comment.id)} className="text-red-400 hover:underline">Delete</button>
                     )}
@@ -106,7 +91,6 @@ export default function CommentsSection({ postId }: { postId: string }) {
       createdAt: serverTimestamp(),
       parentId: replyingTo,
       reported: false,
-      likes: [],
     });
 
     setNewComment('');

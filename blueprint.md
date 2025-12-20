@@ -23,6 +23,7 @@
     - [x] Define Color Palette (Background: #1A202C, Surface: #EDF2F7, Accent: #805AD5).
     - [x] Create `GlassPanel`, `Button`, `Input` components.
     - [x] Layout Component (Header, Footer, Main Wrapper).
+- [x] **Navigation:** Updated to use `/posts` instead of `/blog`.
 
 ### Phase 2: Authentication & User Management (COMPLETED)
 - [x] **Firebase Auth Setup:**
@@ -33,7 +34,7 @@
     - [x] Create `users` collection in Firestore.
     - [x] Store roles (`admin`, `moderator`, `user`).
 - [x] **Profile Page:**
-    - [x] View/Edit Profile (Avatar, Name, Bio).
+    - [x] View/Edit Profile (Avatar, Name, Bio, Social Media Links).
     - [x] Image Upload to Storage.
     - [x] Protected Routes implemented.
 
@@ -47,9 +48,10 @@
     - [x] Added "Source Code" view toggle.
     - [x] Image Upload handler (Cloud Storage).
 - [x] **Tagging System:** Implemented tag input with remove functionality.
+- [x] **Slug-based Routing:** Implemented for posts.
 
-### Phase 4: Blog Public View (COMPLETED)
-- [x] **Home Page/Blog List:**
+### Phase 4: Posts Public View (COMPLETED)
+- [x] **Home Page/Posts List:**
     - [x] Fetch and display published posts.
     - [x] Filter by Tag.
     - [x] Skeleton loading states.
@@ -57,9 +59,11 @@
     - [x] Category Filters.
     - [x] Read Time Estimates.
     - [x] Newsletter Signup.
-- [x] **Post Detail Page:**
+- [x] **Post Detail Page (`PostPage.tsx`):**
+    - [x] Fetches post by `slug`.
     - [x] Render full HTML content safely (DOMPurify).
-    - [x] Display Metadata (Author, Date, Tags).
+    - [x] Display Metadata (Author, Date, Tags, Read Time).
+    - [x] **Syntax Highlighting** for code blocks using `highlight.js`.
 - [x] **Comments System:**
     - [x] Nested/Threaded comments structure.
     - [x] Emoji Picker integration.
@@ -83,7 +87,18 @@
 - [x] **SEO:** Dynamic `<meta>` tags using `react-helmet-async` implemented on Home and Post pages.
 - [x] **Testing:** Unit tests for `AuthContext` and UI components implemented using Vitest.
 
-### Phase 7: Advanced UI & Features (PLANNED)
+### Phase 7: Advanced UI & Features (IN PROGRESS)
+- [x] **Homepage CTA:** Added a "Journal & Symptom Tracker" call-to-action section.
+- [x] **Journal & Symptom Tracker (COMPLETED):**
+    - [x] Create dedicated `/journal` page (protected route).
+    - [x] Implement UI for creating and viewing entries.
+    - [x] Set up `journals` collection in Firestore.
+    - [x] Add Edit and Delete functionality for journal entries.
+    - [x] Implement filtering and searching for journal entries.
+- [ ] **Symptom Data Visualization (IN PROGRESS):**
+    - [ ] Create a new component for symptom visualization.
+    - [ ] Use a charting library (e.g., Chart.js or D3) to display symptom frequency and trends over time.
+    - [ ] Integrate the visualization component into the Journal page.
 - [ ] **Typography System:**
     - [ ] Headings: Space Grotesk (Bold, tight tracking).
     - [ ] Body: Inter (Relaxed leading).

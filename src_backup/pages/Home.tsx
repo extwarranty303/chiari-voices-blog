@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 import { Button, GlassPanel } from '../components/ui';
 import { ArrowRight, Rss, UserPlus } from 'lucide-react';
 import SEO from '../components/SEO';
-import JournalCTA from '../components/home/JournalCTA';
 
 interface Post {
   id: string;
@@ -70,7 +69,7 @@ export default function Home() {
         ) : (
           <div className="space-y-8">
             {featuredPost && (
-              <Link to={`/posts/${featuredPost.slug}`} className="block group">
+              <Link to={`/blog/${featuredPost.slug}`} className="block group">
                 <GlassPanel className="grid md:grid-cols-2 gap-8 items-center overflow-hidden p-8 hover:bg-white/10 transition-colors">
                   <div className="order-2 md:order-1">
                     <h2 className="text-4xl font-bold text-white mb-4 group-hover:underline">{featuredPost.title}</h2>
@@ -87,7 +86,7 @@ export default function Home() {
             {latestPosts.length > 0 && (
               <div className="grid md:grid-cols-3 gap-6">
                 {latestPosts.map(post => (
-                  <Link key={post.id} to={`/posts/${post.slug}`} className="block group">
+                  <Link key={post.id} to={`/blog/${post.slug}`} className="block group">
                     <GlassPanel className="h-full flex flex-col p-6 hover:bg-white/10 transition-colors">
                        <div className="h-40 w-full overflow-hidden rounded-lg mb-4"><img src={post.imageUrl || '/placeholder.jpg'} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /></div>
                        <h3 className="text-xl font-bold text-white mb-2 flex-grow group-hover:underline">{post.title}</h3>
@@ -122,16 +121,12 @@ export default function Home() {
         </GlassPanel>
       </section>
 
-      <section>
-        <JournalCTA />
-      </section>
-
       <section className="text-center">
         <GlassPanel className="p-12">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Explore?</h2>
           <p className="text-surface/70 mb-6">Dive into our collection of stories, insights, and shared experiences.</p>
           <Button asChild size="lg" variant="primary">
-            <Link to="/posts">
+            <Link to="/blog">
               <Rss size={18} className="mr-2" /> Browse All Articles
             </Link>
           </Button>

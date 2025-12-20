@@ -1,16 +1,18 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
-import { collection, getDocs, query, orderBy, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { GlassPanel, Button, cn, Card, CardContent, CardHeader, CardTitle, Input } from '../components/ui';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { GlassPanel, Button, cn } from '../components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Plus, Edit2, FileText, CheckCircle, Pencil, Flag } from 'lucide-react';
+
+const PostEditor = lazy(() => import('../components/PostEditor'));
 
 interface Post {
   id: string;
   title: string;
   content: string;
-  slug: string;
   status: 'draft' | 'published';
   createdAt: any;
 }
@@ -36,12 +38,6 @@ export default function AdminDashboard() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all');
-  
-  // State for the inline editor
-  const [editorTitle, setEditorTitle] = useState('');
-  const [editorContent, setEditorContent] = useState('');
-  const [editorStatus, setEditorStatus] = useState<'draft' | 'published'>('draft');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && currentUser) {
@@ -70,17 +66,11 @@ export default function AdminDashboard() {
 
   const handleNewPost = () => {
     setEditingPost(null);
-    setEditorTitle('');
-    setEditorContent('');
-    setEditorStatus('draft');
     setIsEditing(true);
   };
 
   const handleEditPost = (post: Post) => {
     setEditingPost(post);
-    setEditorTitle(post.title);
-    setEditorContent(post.content);
-    setEditorStatus(post.status);
     setIsEditing(true);
   };
 
@@ -88,40 +78,6 @@ export default function AdminDashboard() {
     setIsEditing(false);
     setEditingPost(null);
     fetchData();
-  };
-  
-  const handleSavePost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentUser) return;
-    setIsSubmitting(true);
-
-    const slug = editorTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
-
-    try {
-      if (editingPost) {
-        const postRef = doc(db, 'posts', editingPost.id);
-        await updateDoc(postRef, {
-          title: editorTitle,
-          content: editorContent,
-          status: editorStatus,
-          slug,
-        });
-      } else {
-        await addDoc(collection(db, 'posts'), {
-          title: editorTitle,
-          content: editorContent,
-          status: editorStatus,
-          slug,
-          authorId: currentUser.uid,
-          createdAt: serverTimestamp(),
-        });
-      }
-      handleCloseEditor();
-    } catch (error) {
-      console.error("Error saving post:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const stats: DashboardStats = useMemo(() => ({
@@ -143,46 +99,9 @@ export default function AdminDashboard() {
 
   if (isEditing) {
     return (
-      <GlassPanel className="p-8">
-        <h2 className="text-2xl font-bold text-white mb-6">
-          {editingPost ? 'Edit Post' : 'New Post'}
-        </h2>
-        <form onSubmit={handleSavePost} className="space-y-6">
-          <Input 
-            type="text"
-            placeholder="Post Title"
-            value={editorTitle}
-            onChange={(e) => setEditorTitle(e.target.value)}
-            required
-            className="w-full"
-          />
-          <textarea
-            placeholder="Write your post content here..."
-            value={editorContent}
-            onChange={(e) => setEditorContent(e.target.value)}
-            required
-            className="w-full h-96 p-3 bg-surface/50 text-white rounded-lg border border-surface/20 focus:ring-accent focus:border-accent"
-          />
-          <div className="flex items-center gap-4">
-            <label htmlFor="status" className="text-white">Status:</label>
-            <select 
-              id="status"
-              value={editorStatus}
-              onChange={(e) => setEditorStatus(e.target.value as 'draft' | 'published')}
-              className="bg-surface/50 border border-surface/20 rounded-md p-2 text-white"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
-          </div>
-          <div className="flex justify-end gap-4">
-            <Button type="button" variant="secondary" onClick={handleCloseEditor}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Post'}
-            </Button>
-          </div>
-        </form>
-      </GlassPanel>
+      <Suspense fallback={<div className="text-center p-8 text-surface/60">Loading Editor...</div>}>
+        <PostEditor post={editingPost} onClose={handleCloseEditor} />
+      </Suspense>
     );
   }
 
