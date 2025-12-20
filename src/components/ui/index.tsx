@@ -1,13 +1,8 @@
-import React, { useState, useRef, useEffect, Fragment } from 'react';
+import React, { useState, useRef, useEffect, Fragment, useId } from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { Dialog, Transition } from '@headlessui/react';
 import { X } from 'lucide-react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../../lib/utils';
 
 // GlassPanel.tsx
 interface GlassPanelProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -29,11 +24,11 @@ export function GlassPanel({ children, className, ...props }: GlassPanelProps) {
 // Button.tsx
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
-  variant?: 'primary' | 'secondary' | 'ghost' | 'outline';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'destructive' | 'destructive-ghost';
   size?: 'sm' | 'md' | 'lg' | 'icon';
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
     
@@ -42,6 +37,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       secondary: "bg-surface/10 hover:bg-surface/20 text-surface border border-surface/20",
       ghost: "hover:bg-surface/10 text-surface",
       outline: "border border-accent text-accent hover:bg-accent hover:text-white",
+      destructive: "bg-red-500/90 text-white hover:bg-red-500",
+      "destructive-ghost": "text-red-400/70 hover:bg-red-400/10 hover:text-red-400",
     };
     
     const sizes = {
@@ -74,7 +71,8 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export function Input({ className, label, error, id, ...props }: InputProps) {
-  const inputId = id || React.useId();
+  const internalId = useId();
+  const inputId = id || internalId;
   return (
     <div className="flex flex-col gap-1.5 w-full">
       {label && <label htmlFor={inputId} className="text-sm font-medium text-surface/80">{label}</label>}
@@ -99,13 +97,16 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
   label?: string;
 }
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ label, ...props }, ref) => {
+export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ className, label, ...props }, ref) => {
   return (
-    <div>
+    <div className="w-full">
       {label && <label className="block text-sm font-medium text-surface/80 mb-2">{label}</label>}
       <textarea
         ref={ref}
-        className="w-full glass-input p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50"
+        className={cn(
+            "w-full glass-input p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50",
+            className
+        )}
         {...props}
       />
     </div>
@@ -114,7 +115,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(({ label, 
 Textarea.displayName = 'Textarea';
 
 // Card.tsx
-const Card = React.forwardRef<
+export const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
@@ -129,7 +130,7 @@ const Card = React.forwardRef<
 ));
 Card.displayName = 'Card';
 
-const CardHeader = React.forwardRef<
+export const CardHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
@@ -141,7 +142,7 @@ const CardHeader = React.forwardRef<
 ));
 CardHeader.displayName = 'CardHeader';
 
-const CardTitle = React.forwardRef<
+export const CardTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
@@ -153,7 +154,7 @@ const CardTitle = React.forwardRef<
 ));
 CardTitle.displayName = 'CardTitle';
 
-const CardContent = React.forwardRef<
+export const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
@@ -167,7 +168,7 @@ interface DropdownProps {
   children: React.ReactNode;
 }
 
-function Dropdown({ trigger, children }: DropdownProps) {
+export function Dropdown({ trigger, children }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const node = useRef<HTMLDivElement>(null);
 
@@ -206,7 +207,7 @@ function Dropdown({ trigger, children }: DropdownProps) {
   );
 }
 
-function DropdownItem({ children }: { children: React.ReactNode }) {
+export function DropdownItem({ children }: { children: React.ReactNode }) {
   return (
     <div className="block px-4 py-2 text-sm text-surface hover:bg-accent/20 cursor-pointer">
       {children}
@@ -223,7 +224,7 @@ interface ModalProps {
   className?: string;
 }
 
-function Modal({ isOpen, onClose, title, children, className }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, className }: ModalProps) {
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -276,7 +277,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
 }
 
-const Select = React.forwardRef<HTMLSelectElement, SelectProps>(({ className, label, children, ...props }, ref) => {
+export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(({ className, label, children, ...props }, ref) => {
   return (
     <div className="w-full">
       {label && <label className="block text-sm font-medium text-surface/80 mb-2">{label}</label>}
@@ -300,6 +301,3 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(({ className, la
 });
 
 Select.displayName = 'Select';
-
-
-export { Button, Textarea, Card, CardHeader, CardTitle, CardContent, Dropdown, DropdownItem, Modal, Select };

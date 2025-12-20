@@ -1,117 +1,103 @@
-# Blueprint: Chiari Voices AI-Powered Blog
+# Chiari Voices - AI-Powered Blog Platform
 
-## 1. Project Overview
-**Goal:** Build a modern, responsive blog platform with a "Glassmorphism" aesthetic, integrated with Firebase for backend services and Google Gemini (via Genkit and Firebase AI Logic) for advanced AI content features.
-**Design Philosophy:** Match `chiarivoices.org` (Chiari awareness colors), Clean, Responsive, Glassmorphism, "Inter" (Body) & "Space Grotesk" (Headlines) fonts.
-**Tech Stack:** React (Vite), Firebase (Auth, Firestore, Storage, Functions), Genkit, Tailwind CSS.
+## 1. Overview
 
-## 2. Architecture & Roles
-*   **Frontend:** React Single Page Application (SPA).
-*   **Backend:** Firebase Serverless (Functions, Firestore).
-*   **AI:** Gemini 3 Pro via Genkit (Server-side) and Firebase AI Logic (Client-side).
-*   **Roles:**
-    *   **Admin:** Full access (manage users, settings, all content).
-    *   **Moderator:** Create/Edit/Delete posts, Moderate comments.
-    *   **User:** Read, Comment, Manage own Profile/Bookmarks.
+This document outlines the plan for building a comprehensive, AI-powered blog platform for the Chiari malformation community. The platform will provide a space for creating, managing, and reading content, with a rich feature set powered by Firebase and Google AI (Gemini 3 Pro via Genkit). The user experience will be consistent with the look, feel, and color scheme of `chiarivoices.org`.
 
-## 3. Implementation Plan
+---
 
-### Phase 1: Foundation & Design System (COMPLETED)
-- [x] **Project Setup:** Install `react-router-dom`, `firebase`, `tailwindcss` (or chosen UI lib), `lucide-react` (icons).
-- [x] **Design System:**
-    - [x] Import fonts: Inter and Space Grotesk.
-    - [x] Define Color Palette (Background: #1A202C, Surface: #EDF2F7, Accent: #805AD5).
-    - [x] Create `GlassPanel`, `Button`, `Input` components.
-    - [x] Layout Component (Header, Footer, Main Wrapper).
-- [x] **Navigation:** Updated to use `/posts` instead of `/blog`.
+## 2. Core Architecture & Technology Stack
 
-### Phase 2: Authentication & User Management (COMPLETED)
-- [x] **Firebase Auth Setup:**
-    - [x] Configure `firebase.ts`.
-    - [x] Create `AuthContext`.
-    - [x] Implement Login (Email, Google, FB) & Signup.
-- [x] **User Database:**
-    - [x] Create `users` collection in Firestore.
-    - [x] Store roles (`admin`, `moderator`, `user`).
-- [x] **Profile Page:**
-    - [x] View/Edit Profile (Avatar, Name, Bio, Social Media Links).
-    - [x] Image Upload to Storage.
-    - [x] Protected Routes implemented.
+*   **Frontend:** React with Vite (TypeScript)
+*   **Backend:** Firebase (Authentication, Cloud Firestore, Cloud Storage, Cloud Functions)
+*   **AI Integration:** Genkit for complex server-side AI workflows, and Firebase AI Logic for optional client-side tasks.
+*   **AI Model:** Gemini 3 Pro
+*   **Styling:** Tailwind CSS
+*   **Component Library:** Shadcn/ui (for maximum control and a clean, dependency-light approach)
 
-### Phase 3: Blog Core (Admin Side - COMPLETED)
-- [x] **Data Structure:** Defined `posts` collection in Firestore.
-- [x] **Admin Dashboard:**
-    - [x] List view of posts (Edit/Delete).
-    - [x] Create/Edit Post form.
-- [x] **WYSIWYG Editor:**
-    - [x] Integrated `react-quill` with custom Glassmorphism styles.
-    - [x] Added "Source Code" view toggle.
-    - [x] Image Upload handler (Cloud Storage).
-- [x] **Tagging System:** Implemented tag input with remove functionality.
-- [x] **Slug-based Routing:** Implemented for posts.
+---
 
-### Phase 4: Posts Public View (COMPLETED)
-- [x] **Home Page/Posts List:**
-    - [x] Fetch and display published posts.
-    - [x] Filter by Tag.
-    - [x] Skeleton loading states.
-    - [x] Featured Story Hero.
-    - [x] Category Filters.
-    - [x] Read Time Estimates.
-    - [x] Newsletter Signup.
-- [x] **Post Detail Page (`PostPage.tsx`):**
-    - [x] Fetches post by `slug`.
-    - [x] Render full HTML content safely (DOMPurify).
-    - [x] Display Metadata (Author, Date, Tags, Read Time).
-    - [x] **Syntax Highlighting** for code blocks using `highlight.js`.
-- [x] **Comments System:**
-    - [x] Nested/Threaded comments structure.
-    - [x] Emoji Picker integration.
-    - [x] Like functionality.
-    - [x] Real-time updates via `onSnapshot`.
+## 3. Design and User Experience (UX)
 
-### Phase 5: AI Integration (Gemini 3 Pro) (COMPLETED)
-- [x] **Genkit Setup (Cloud Functions):**
-    - [x] Created `functions/src/ai.ts` with 3 Genkit flows using Gemini 1.5 Flash.
-    - [x] `generatePostIdeas`: Generates titles from a topic.
-    - [x] `generateOutline`: Creates structured HTML outline from a title.
-    - [x] `generateSeo`: Analyzes content for keywords and meta descriptions.
-- [x] **Client-Side Integration:**
-    - [x] Updated `AdminDashboard.tsx` with AI toolbar.
-    - [x] Implemented "AI Ideas" panel to generate and select titles.
-    - [x] Implemented "Gen Outline" to append structured content to the editor.
-    - [x] Implemented "Analyze SEO" to fetch keywords and meta description.
+*   **Color Scheme:** The palette will be sampled from `chiarivoices.org` to ensure brand consistency, focusing on its dark theme with purple and teal accents.
+*   **Layout:** A clean, modern, and responsive layout that works seamlessly on all devices.
+*   **Visual Style:** **Glassmorphism** will be used for key UI elements to create a sense of depth and transparency.
+*   **Typography:**
+    *   **Body:** `Inter` (sans-serif) for readability.
+    *   **Headlines:** `Space Grotesk` (sans-serif) for a bold, technical feel.
+*   **Iconography:** Clear, minimalist icons will be used for navigation and interactive elements.
+*   **Animation:** Subtle animations will provide feedback for loading states and user interactions.
+*   **Header & Footer:** Will be designed to match `chiarivoices.org`.
 
-### Phase 6: Refinement & Polish (COMPLETED)
-- [x] **Accessibility:** Checked contrast, improved ARIA labels for Buttons and Inputs.
-- [x] **SEO:** Dynamic `<meta>` tags using `react-helmet-async` implemented on Home and Post pages.
-- [x] **Testing:** Unit tests for `AuthContext` and UI components implemented using Vitest.
+---
 
-### Phase 7: Advanced UI & Features (IN PROGRESS)
-- [x] **Homepage CTA:** Added a "Journal & Symptom Tracker" call-to-action section.
-- [x] **Journal & Symptom Tracker (COMPLETED):**
-    - [x] Create dedicated `/journal` page (protected route).
-    - [x] Implement UI for creating and viewing entries.
-    - [x] Set up `journals` collection in Firestore.
-    - [x] Add Edit and Delete functionality for journal entries.
-    - [x] Implement filtering and searching for journal entries.
-- [ ] **Symptom Data Visualization (IN PROGRESS):**
-    - [ ] Create a new component for symptom visualization.
-    - [ ] Use a charting library (e.g., Chart.js or D3) to display symptom frequency and trends over time.
-    - [ ] Integrate the visualization component into the Journal page.
-- [ ] **Typography System:**
-    - [ ] Headings: Space Grotesk (Bold, tight tracking).
-    - [ ] Body: Inter (Relaxed leading).
-    - [ ] Accessibility: OpenDyslexic toggle integration.
-- [ ] **Core UI Components:**
-    - [ ] "Symptom-Safe" Toggle (Reduced motion, high contrast mode).
-    - [ ] Glass Card: Dark glass aesthetic with hover glow (no scale).
-    - [ ] "Zipper" Progress Bar.
-- [ ] **Layout Updates:**
-    - [ ] Landing Page: Aurora Borealis background, new copy, 3D anatomical anchor.
-    - [ ] Article View: Centered single column (max 700px), "AI Brief", "Listen" button.
-    - [ ] Admin Dashboard: "The Muse" AI panel (Sentiment/Readability gauge).
-- [ ] **Interactive Features:**
-    - [ ] Sentiment Search (Filter by vibe).
-    - [ ] "Spoon" Visualizer (Complexity rating).
-- [ ] **Footer:** Update copyright to "Chiari Voices Foundation".
+## 4. Key Features & Implementation Plan
+
+### Phase 1: Foundation & Authentication
+
+*   [x] **Firebase Project Setup:** Create a new Firebase project and connect it to this workspace.
+*   [x] **Core Services:** Initialize Firebase Authentication, Cloud Firestore, and Cloud Storage.
+*   [x] **Styling Foundation:** Configure Tailwind CSS with the `chiarivoices.org` color palette, fonts, and Glassmorphism styles.
+*   [x] **Login Page:**
+    *   Create a dedicated, responsive login page.
+    *   Implement authentication via Email/Password, Google, and Facebook.
+    *   Implement a password reset flow for email-based accounts.
+*   [x] **User Roles & Security:**
+    *   Define three user roles: `admin`, `moderator`, and `user`.
+    *   Set up Firestore Security Rules to enforce permissions based on these roles.
+    *   Store user data and roles in a `users` collection in Firestore.
+
+### Phase 2: Blog Content Management (Admin/Moderator)
+
+*   [x] **Admin Dashboard:** Create a secure dashboard accessible only to `admin` and `moderator` roles.
+*   [x] **Post Creation & Editing:**
+    *   Build a `PostEditor` component.
+    *   Integrate a full-featured WYSIWYG editor with a "Source Code" view.
+    *   Enable fields for `title`, `content` (HTML), and `tags`.
+*   [x] **Media Handling:**
+    *   Allow image and video uploads directly to Cloud Storage.
+    *   Allow embedding media via URL.
+*   [x] **Post Management:**
+    *   Create a view to list all posts (CRUD operations).
+    *   Admins have full CRUD access.
+    *   Moderators have Create, Update, and Delete permissions.
+
+### Phase 3: Public Blog & User Features
+
+*   [x] **Blog Post Display:**
+    *   Create a main blog page to list all published posts.
+    *   Create a single post page (`/posts/:slug`) to display full content.
+*   [x] **Nested Comments:** Implement a Reddit-like nested commenting system on post pages.
+*   [x] **User Profile Page:**
+    *   Create a private, user-only profile page.
+    *   Allow users to update their profile picture, location, and other data.
+    *   Implement a feature to bookmark favorite articles, storing them in the user's profile data.
+
+### Phase 4: Future AI Feature Integration (Genkit & Gemini 3 Pro)
+
+*   [ ] **Genkit Setup:** Initialize Genkit within a Cloud Functions environment.
+*   [ ] **Content Assistance (Generate & Refine):**
+    *   **UI:** Add an "AI Assistant" section to the `PostEditor`.
+    *   **Genkit Flow:** Create a flow that accepts a topic/keywords and generates:
+        *   Blog post ideas
+        *   Outlines
+        *   Initial drafts
+*   [ ] **SEO & Summarization:**
+    *   **UI:** Add "Generate SEO" and "Generate Summary" buttons to the editor.
+    *   **Genkit Flow (`generateSeoKeywordsFlow`):** Create a flow to analyze post content and generate:
+        *   SEO keywords.
+        *   A meta description.
+    *   **AI Summary:** Implement a feature to generate a concise summary of long posts.
+*   [ ] **AI-Powered Tagging:**
+    *   **UI:** Show AI-suggested tags in the editor.
+    *   **Genkit Flow:** Create a flow to suggest relevant tags based on post content.
+*   [ ] **AI Image Generation:**
+    *   **UI:** Add a feature to generate an image from a text prompt.
+    *   **Genkit/AI Logic Flow:** Create a flow to call the Gemini model for image generation and save it to Cloud Storage.
+*   [ ] **AI Comment Moderation:**
+    *   **Cloud Function Trigger:** On comment creation, trigger a a function.
+    *   **Genkit Flow:** Create a flow that analyzes comment text for spam or offensive language and flags it for moderator review.
+*   [ ] **Advanced AI Features (Future):**
+    *   [ ] **Content Outdatedness Detector:** AI tool to flag posts that may need updates.
+    *   [|] **Personalized Recommendations:** AI to suggest articles to readers.
+    *   [ ] **Accessibility:** AI-powered video transcription and text-to-speech.

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import type { User } from 'firebase/auth';
 import { 
   onAuthStateChanged, 
-  signOut as firebaseSignOut 
+  signOut as firebaseSignOut
 } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -14,34 +15,25 @@ interface UserData {
   photoURL?: string;
 }
 
-interface AuthContextType {
-  currentUser: UserData | null;
+export interface AuthContextType {
+  user: UserData | null;
   loading: boolean;
   logout: () => Promise<void>;
   isAdmin: boolean;
   isModerator: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
+    const unsubscribe = onAuthStateChanged(auth, async (authUser: User | null) => {
+      if (authUser) {
         try {
-          // Fetch user role from Firestore
-          const userDocRef = doc(db, 'users', user.uid);
+          const userDocRef = doc(db, 'users', authUser.uid);
           const userDoc = await getDoc(userDocRef);
           
           let role: 'admin' | 'moderator' | 'user' = 'user';
@@ -53,26 +45,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.warn("User authenticated but no Firestore profile found. Defaulting to 'user'.");
           }
 
-          setCurrentUser({
-            uid: user.uid,
-            email: user.email,
+          setUser({
+            uid: authUser.uid,
+            email: authUser.email,
             role,
-            displayName: user.displayName || '',
-            photoURL: user.photoURL || ''
+            displayName: authUser.displayName || '',
+            photoURL: authUser.photoURL || ''
           });
         } catch (error) {
           console.error("Error fetching user profile:", error);
-          // Still set the user, just with default role, so they aren't locked out entirely
-          setCurrentUser({
-            uid: user.uid,
-            email: user.email,
+          setUser({
+            uid: authUser.uid,
+            email: authUser.email,
             role: 'user',
-            displayName: user.displayName || '',
-            photoURL: user.photoURL || ''
+            displayName: authUser.displayName || '',
+            photoURL: authUser.photoURL || ''
           });
         }
       } else {
-        setCurrentUser(null);
+        setUser(null);
       }
       setLoading(false);
     });
@@ -85,16 +76,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const value = {
-    currentUser,
+    user,
     loading,
     logout,
-    isAdmin: currentUser?.role === 'admin',
-    isModerator: currentUser?.role === 'moderator' || currentUser?.role === 'admin' // Admin is also a mod effectively
+    isAdmin: user?.role === 'admin',
+    isModerator: user?.role === 'moderator' || user?.role === 'admin'
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

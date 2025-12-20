@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
@@ -8,12 +8,15 @@ export default {
         display: ["Space Grotesk", "sans-serif"],
       },
       colors: {
-        background: "var(--color-background)",
-        surface: "var(--color-surface)",
-        accent: "var(--color-accent)",
-        secondary: "var(--color-secondary)",
-        muted: "var(--color-muted)",
-        alert: "var(--color-alert)",
+        background: '#0F172A',
+        surface: '#F8FAFC',
+        accent: '#6B46C1',
+        secondary: '#38B2AC',
+        muted: '#94A3B8',
+        alert: '#F6E05E',
+        border: '#38B2AC',
+        text: '#F8FAFC',
+        primary: '#6B46C1',
       },
     },
   },

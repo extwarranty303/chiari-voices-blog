@@ -46,5 +46,10 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow update, delete: if isOwner(resource.data.userId) || isModerator();
     }
+
+    match /journalEntries/{journalEntryId} {
+      allow create: if isOwner(request.resource.data.userId);
+      allow read, update, delete: if isOwner(resource.data.userId);
+    }
   }
 }

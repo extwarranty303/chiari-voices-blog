@@ -14,7 +14,7 @@ const commonSymptoms = [
 ];
 
 interface SymptomTrackerProps {
-  onSave: (symptoms: any) => void;
+  onSave: (symptoms: {symptoms: string[], painLevel: number, notes: string, timestamp: string}) => void;
   isSaving: boolean;
 }
 

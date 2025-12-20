@@ -1,14 +1,13 @@
-import React, { useState, useEffect, Suspense, lazy, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { db, storage, functions } from '../firebase';
-import { httpsCallable } from 'firebase/functions';
-import { collection, setDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { db, storage } from '../firebase';
+import { collection, setDoc, updateDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { GlassPanel, Button, Input } from './ui';
-import { X, Image as ImageIcon, Tags, Lightbulb, Clock } from 'lucide-react';
+import { X, Image as ImageIcon, Clock, Eye } from "lucide-react";
 import { calculateReadTime } from '../utils/readTime';
-
-const Editor = lazy(() => import('./Editor'));
+import TiptapEditor from './TiptapEditor';
+import PostPreview from './PostPreview';
 
 interface Post {
     id: string;
@@ -16,6 +15,19 @@ interface Post {
     content: string;
     status: 'draft' | 'published';
     readTime?: number;
+    createdAt: Timestamp;
+    tags?: string[];
+    imageUrl?: string;
+    metaTitle?: string;
+    metaDescription?: string;
+    slug?: string;
+    primaryKeyword?: string;
+    secondaryKeywords?: string[];
+    excerpt?: string;
+    authorId?: string;
+    authorName?: string;
+    updatedAt?: Timestamp;
+    featured?: boolean;
 }
 
 interface PostEditorProps {
@@ -28,9 +40,8 @@ const generateSlug = (title: string) => {
 };
 
 export default function PostEditor({ post, onClose }: PostEditorProps) {
-    const { currentUser } = useAuth();
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
-    const [aiLoading, setAiLoading] = useState(false);
   
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
@@ -39,29 +50,41 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
     const [postImage, setPostImage] = useState('');
     const [status, setStatus] = useState<'draft' | 'published'>('draft');
     const [readTime, setReadTime] = useState(0);
+    const [isPreviewing, setIsPreviewing] = useState(false);
 
     const [metaTitle, setMetaTitle] = useState('');
     const [metaDescription, setMetaDescription] = useState('');
     const [slug, setSlug] = useState('');
     const [primaryKeyword, setPrimaryKeyword] = useState('');
     const [secondaryKeywords, setSecondaryKeywords] = useState('');
-  
-    const [showAiIdeas, setShowAiIdeas] = useState(false);
-    const [ideaTopic, setIdeaTopic] = useState('');
 
     useEffect(() => {
         if (post) {
             setTitle(post.title);
             setContent(post.content || '');
-            setTags((post as any).tags || []);
-            setPostImage((post as any).imageUrl || '');
+            setTags(post.tags || []);
+            setPostImage(post.imageUrl || '');
             setStatus(post.status);
             setReadTime(post.readTime || 0);
-            setMetaTitle((post as any).metaTitle || '');
-            setMetaDescription((post as any).metaDescription || '');
-            setSlug((post as any).slug || '');
-            setPrimaryKeyword((post as any).primaryKeyword || '');
-            setSecondaryKeywords(((post as any).secondaryKeywords || []).join(', '));
+            setMetaTitle(post.metaTitle || '');
+            setMetaDescription(post.metaDescription || '');
+            setSlug(post.slug || '');
+            setPrimaryKeyword(post.primaryKeyword || '');
+            setSecondaryKeywords((post.secondaryKeywords || []).join(', '));
+        } else {
+          // Reset state for new post
+          setTitle('');
+          setContent('');
+          setTags([]);
+          setTagInput('');
+          setPostImage('');
+          setStatus('draft');
+          setReadTime(0);
+          setMetaTitle('');
+          setMetaDescription('');
+          setSlug('');
+          setPrimaryKeyword('');
+          setSecondaryKeywords('');
         }
     }, [post]);
 
@@ -74,22 +97,8 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
         setReadTime(time);
     }, [content]);
 
-    const runAiHelper = useCallback(async (type: 'tags' | 'ideas') => {
-        setAiLoading(true);
-        try {
-          const blogAiHelper = httpsCallable(functions, 'blogAiHelper');
-          const result: any = await blogAiHelper({ type, content, topic: ideaTopic });
-          if (result.data.tags) setTags(prev => [...new Set([...prev, ...result.data.tags])]);
-        } catch (error) {
-          console.error(`AI Helper Error (${type}):`, error);
-          alert("AI helper failed.");
-        } finally {
-          setAiLoading(false);
-        }
-    }, [content, ideaTopic]);
-
     const handleSave = async (publish: boolean) => {
-        if (!currentUser || !title.trim()) return alert("Title is required.");
+        if (!user || !title.trim()) return alert("Title is required.");
         setLoading(true);
         const newStatus = publish ? 'published' : 'draft';
         setStatus(newStatus);
@@ -98,9 +107,9 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
         tempDiv.innerHTML = content;
         const excerpt = (tempDiv.textContent || '').slice(0, 150) + '...';
 
-        const postData = {
+        const postData: Partial<Post> = {
             title, content, excerpt, tags, imageUrl: postImage, status: newStatus, readTime,
-            authorId: currentUser.uid, authorName: 'Chiari Voices Admin', updatedAt: serverTimestamp(),
+            authorId: user.uid, authorName: 'Chiari Voices Admin', updatedAt: serverTimestamp() as any,
             metaTitle: metaTitle || title, metaDescription, slug: slug || generateSlug(title),
             primaryKeyword, secondaryKeywords: secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean),
         };
@@ -143,44 +152,89 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
     const removeTag = (tagToRemove: string) => setTags(tags.filter(tag => tag !== tagToRemove));
 
     return (
-        <GlassPanel>
-            <form onSubmit={(e) => { e.preventDefault(); handleSave(true); }} className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold">{post ? 'Edit Post' : 'Create New Post'}</h2>
-                    <Button variant="ghost" size="sm" onClick={onClose}><X size={18} /> Close</Button>
-                </div>
-                <div className="grid md:grid-cols-3 gap-8">
-                    <div className="md:col-span-2 space-y-6">
-                        <div className="flex gap-2 flex-wrap">
-                            <Button type="button" size="sm" variant="secondary" onClick={() => setShowAiIdeas(!showAiIdeas)}><Lightbulb size={14} /> AI Ideas</Button>
-                            <Button type="button" size="sm" variant="secondary" onClick={() => runAiHelper('tags')} disabled={aiLoading || !content}><Tags size={14} /> Gen Tags</Button>
-                        </div>
-                        {showAiIdeas && (
-                            <div className="bg-accent/10 p-4 rounded-lg">
-                                <div className="flex gap-2 mb-3">
-                                    <Input placeholder="Enter a topic..." value={ideaTopic} onChange={(e) => setIdeaTopic(e.target.value)} className="bg-black/20" />
-                                    <Button type="button" onClick={() => runAiHelper('ideas')} disabled={aiLoading || !ideaTopic}>{aiLoading ? '...' : 'Go'}</Button>
+        <>
+            <div className="p-8 overflow-y-auto h-full scrollbar-thin scrollbar-thumb-accent/50 scrollbar-track-surface/10">
+                <form onSubmit={(e) => { e.preventDefault(); handleSave(true); }} className="space-y-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-white">{post ? 'Edit Post' : 'Create New Post'}</h2>
+                        <Button variant="destructive" size="icon" onClick={onClose}><X /></Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Left/Main Column */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <Input label="Post Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                            
+                            <TiptapEditor value={content} onChange={setContent} />
+
+                            <div className="pt-6 border-t border-surface/10">
+                                <h3 className="text-lg font-bold text-white mb-4">SEO Settings</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Input label="Meta Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} />
+                                <Input label="Meta Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
+                                <Input label="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
+                                <Input label="Primary Keyword" value={primaryKeyword} onChange={(e) => setPrimaryKeyword(e.target.value)} />
+                                <Input label="Secondary Keywords" value={secondaryKeywords} onChange={(e) => setSecondaryKeywords(e.target.value)} placeholder="Comma, separated" />
                                 </div>
                             </div>
-                        )}
-                        <Input label="Post Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-                        <div className="border border-accent/30 rounded-lg p-1">
-                            <Suspense fallback={<div>Loading Editor...</div>}><Editor value={content} onChange={setContent} /></Suspense>
+                        </div>
+
+                        {/* Right/Sidebar Column */}
+                        <div className="space-y-6">
+                            <GlassPanel className="p-4">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="font-bold text-white">Actions</h3>
+                                    <span className="text-sm text-surface/60 capitalize">{status}</span>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Button type="button" variant="outline" onClick={() => setIsPreviewing(true)} disabled={loading} className="w-full flex items-center gap-2">
+                                    <Eye size={16}/> Preview
+                                  </Button>
+                                  <div className="flex gap-2">
+                                    <Button type="button" variant="secondary" onClick={() => handleSave(false)} disabled={loading} className="w-full">{loading ? 'Saving...' : 'Save Draft'}</Button>
+                                    <Button type="submit" disabled={loading} className="w-full">{loading ? 'Publishing...' : 'Publish'}</Button>
+                                  </div>
+                                    <Button type="button" variant="ghost" onClick={onClose} className="w-full">Close</Button>
+                                </div>
+                            </GlassPanel>
+
+                            <GlassPanel className="p-4">
+                                <label className="text-sm font-medium text-white">Cover Image</label>
+                                <div className="relative h-40 mt-2 border-2 border-dashed border-accent/30 rounded-lg flex items-center justify-center bg-surface/10">
+                                    {postImage ? (
+                                        <><img src={postImage} alt="Cover" className="w-full h-full object-cover rounded-md" /><button type="button" onClick={() => setPostImage('')} className="absolute top-2 right-2 bg-black/50 p-1 rounded-full"><X size={14} /></button></>
+                                    ) : (
+                                        <label className="cursor-pointer flex flex-col items-center p-4 w-full h-full justify-center text-surface/60 hover:text-white">
+                                            <ImageIcon className="mb-2" />
+                                            <span>Click to upload</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                                        </label>
+                                    )}
+                                </div>
+                            </GlassPanel>
+                            
+                            <GlassPanel className="p-4">
+                                <label className="text-sm font-medium text-white">Tags</label>
+                                <Input placeholder="Type & press Enter..." value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleAddTag} className="mt-2"/>
+                                <div className="flex flex-wrap gap-2 mt-2">{tags.map(tag => <span key={tag} className="px-2 py-1 rounded-md bg-accent/20 text-xs text-white">{tag}<button type="button" onClick={() => removeTag(tag)} className="ml-1 text-white/70 hover:text-white"><X size={12} /></button></span>)}</div>
+                            </GlassPanel>
+                            
+                            <div className="text-center text-surface/60 flex items-center justify-center gap-2"><Clock size={14} /><span>~{readTime} min read</span></div>
                         </div>
                     </div>
-                    <div className="space-y-6">
-                        <div><label className="text-sm font-medium">Cover Image</label><div className="relative h-40 mt-2 border-2 border-dashed border-accent/30 rounded-lg flex items-center justify-center">{postImage ? <><img src={postImage} alt="Cover" className="w-full h-full object-cover" /><button type="button" onClick={() => setPostImage('')} className="absolute top-2 right-2 bg-black/50 p-1 rounded-full"><X size={14} /></button></> : <label className="cursor-pointer flex flex-col items-center p-4 w-full h-full justify-center"><ImageIcon className="mb-2" /><span>Click to upload</span><input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} /></label>}</div></div>
-                        <div><label className="text-sm font-medium">Tags</label><Input placeholder="Type & press Enter..." value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleAddTag} /><div className="flex flex-wrap gap-2 mt-2">{tags.map(tag => <span key={tag} className="px-2 py-1 rounded-md bg-accent/20 text-xs">{tag}<button type="button" onClick={() => removeTag(tag)} className="ml-1"><X size={12} /></button></span>)}</div></div>
-                        <div className="flex items-center gap-2 text-surface/60"><Clock size={14} /><span>~{readTime} min read</span></div>
-                    </div>
-                </div>
-                <div className="pt-6 border-t border-surface/10"><h3 className="text-lg font-bold mb-4">SEO Settings</h3><div className="space-y-4"><Input label="Meta Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} /><Input label="Meta Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} /><Input label="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} /><Input label="Primary Keyword" value={primaryKeyword} onChange={(e) => setPrimaryKeyword(e.target.value)} /><Input label="Secondary Keywords" value={secondaryKeywords} onChange={(e) => setSecondaryKeywords(e.target.value)} placeholder="Comma, separated" /></div></div>
-                <div className="flex justify-end items-center gap-4 pt-4 border-t border-surface/10">
-                    <span className="text-sm text-surface/60 mr-auto">Status: <span className="font-bold capitalize">{status}</span></span>
-                    <Button type="button" variant="secondary" onClick={() => handleSave(false)} disabled={loading}>{loading ? 'Saving...' : 'Save Draft'}</Button>
-                    <Button type="submit" disabled={loading}>{loading ? 'Publishing...' : 'Publish Post'}</Button>
-                </div>
-            </form>
-        </GlassPanel>
+                </form>
+            </div>
+
+            {isPreviewing && (
+                <PostPreview 
+                    postData={{
+                        title, content, tags, imageUrl: postImage, readTime,
+                        authorName: 'Chiari Voices Admin',
+                        createdAt: post?.createdAt || Timestamp.now()
+                    }}
+                    onClose={() => setIsPreviewing(false)} 
+                />
+            )}
+        </>
     );
 }

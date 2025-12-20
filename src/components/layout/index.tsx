@@ -1,45 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User as UserIcon, ExternalLink, BookOpen, BookOpenCheck, Shield, Settings } from 'lucide-react';
+import { Menu, X, User as UserIcon, ExternalLink } from 'lucide-react';
 import { Button, GlassPanel, Dropdown, DropdownItem } from '../ui';
 import { useAuth } from '../../context/AuthContext';
-import '../../open-dyslexic.css';
-import '../../symptom-safe.css';
 
-export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDyslexicFont, setIsDyslexicFont] = useState(false);
-  const [isSymptomSafe, setIsSymptomSafe] = useState(false);
-  const location = useLocation();
-  const { currentUser, logout, isAdmin, isModerator } = useAuth();
-
-  useEffect(() => {
-    if (isDyslexicFont) {
-      document.body.classList.add('opendyslexic-font');
-    } else {
-      document.body.classList.remove('opendyslexic-font');
-    }
-  }, [isDyslexicFont]);
-
-  useEffect(() => {
-    if (isSymptomSafe) {
-      document.body.classList.add('symptom-safe');
-    } else {
-      document.body.classList.remove('symptom-safe');
-    }
-  }, [isSymptomSafe]);
-
-  const isActive = (path: string) => location.pathname === path;
-
-  const toggleDyslexicFont = () => {
-    setIsDyslexicFont(!isDyslexicFont);
-  };
-
-  const toggleSymptomSafe = () => {
-    setIsSymptomSafe(!isSymptomSafe);
-  };
-
-  const UserMenu = () => (
+const UserMenu = () => {
+  const { logout } = useAuth();
+  return (
     <Dropdown 
       trigger={
         <Button variant="ghost" size="icon">
@@ -52,29 +19,14 @@ export function Header() {
       <DropdownItem><button onClick={logout}>Log Out</button></DropdownItem>
     </Dropdown>
   );
+}
 
-  const AccessibilityMenu = () => (
-    <Dropdown
-      trigger={
-        <Button variant="ghost" size="icon">
-          <Settings size={20} />
-        </Button>
-      }
-    >
-      <DropdownItem>
-        <button onClick={toggleDyslexicFont} className="flex items-center gap-2 w-full">
-          {isDyslexicFont ? <BookOpenCheck size={16} /> : <BookOpen size={16} />}
-          <span>{isDyslexicFont ? "Default Font" : "Dyslexic Font"}</span>
-        </button>
-      </DropdownItem>
-      <DropdownItem>
-        <button onClick={toggleSymptomSafe} className="flex items-center gap-2 w-full">
-          <Shield size={16} />
-          <span>{isSymptomSafe ? "Default Mode" : "Symptom-Safe"}</span>
-        </button>
-      </DropdownItem>
-    </Dropdown>
-  )
+export function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  const { user, logout, isAdmin, isModerator } = useAuth();
+
+  const isActive = (path: string) => location.pathname === path;
 
   return (
     <header className="sticky top-0 z-50 w-full p-4">
@@ -88,7 +40,7 @@ export function Header() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
           <Link 
-            to="/" 
+            to="/"
             className={`text-sm font-medium transition-colors hover:text-accent ${isActive('/') ? 'text-accent' : 'text-surface'}`}
           >
             Home
@@ -116,10 +68,8 @@ export function Header() {
               Admin
             </Link>
           )}
-          
-          <AccessibilityMenu />
 
-          {currentUser ? (
+          {user ? (
             <UserMenu />
           ) : (
              <Link to="/login">
@@ -163,7 +113,7 @@ export function Header() {
           >
             Main Site <ExternalLink size={18} />
           </a>
-          {currentUser && (
+          {user && (
             <>
               <Link
                 to="/journal"
@@ -185,7 +135,7 @@ export function Header() {
              <Link 
               to="/admin" 
               onClick={() => setIsMenuOpen(false)}
-              className={`text-lg font-medium ${isActive('/admin') ? 'text-accent' : 'text-surface'}`}
+              className={`text-lg font--medium ${isActive('/admin') ? 'text-accent' : 'text-surface'}`}
             >
               Admin Dashboard
             </Link>
@@ -193,18 +143,7 @@ export function Header() {
 
           <div className="border-t border-surface/20 my-4" />
           
-          <button onClick={toggleDyslexicFont} className="flex items-center gap-2 text-lg font-medium text-surface">
-            {isDyslexicFont ? <BookOpenCheck size={20} /> : <BookOpen size={20} />}
-            <span>{isDyslexicFont ? "Default Font" : "Dyslexic Font"}</span>
-          </button>
-          <button onClick={toggleSymptomSafe} className="flex items-center gap-2 text-lg font-medium text-surface">
-            <Shield size={20} />
-            <span>{isSymptomSafe ? "Default Mode" : "Symptom-Safe"}</span>
-          </button>
-
-          <div className="border-t border-surface/20 my-4" />
-          
-           {currentUser ? (
+           {user ? (
               <Button variant="secondary" onClick={() => { logout(); setIsMenuOpen(false); }}>
                 Log Out
               </Button>
@@ -216,20 +155,5 @@ export function Header() {
         </GlassPanel>
       )}
     </header>
-  );
-}
-
-export function Footer() {
-  return (
-    <footer className="w-full py-8 mt-auto">
-      <div className="container mx-auto px-4 text-center text-surface/60 text-xs">
-        <p className="mb-4">
-          Disclaimer: The Chiari Voices Foundation does not provide medical advice. The information on this website is for informational and educational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
-        </p>
-        <p>
-          © 2025 The Chiari Voices Foundation. All Rights Reserved.
-        </p>
-      </div>
-    </footer>
   );
 }

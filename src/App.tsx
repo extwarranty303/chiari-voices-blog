@@ -1,58 +1,94 @@
-import React from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { Header, Footer } from './components/layout';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Profile from './pages/Profile';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminComments from './pages/AdminComments';
-import PostListPage from './pages/PostListPage';
-import PostPage from './pages/PostPage';
-import JournalPage from './pages/Journal'; // Import the new page
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './hooks/useAuth';
+import { SymptomSafeProvider } from './context/SymptomSafeContext';
+import { FontProvider } from './context/FontContext';
+import { useFont } from './hooks/useFont';
+import { Header } from './components/layout';
+import { FloatingAccessibilityMenu } from './components/layout/FloatingAccessibilityMenu';
+
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Profile = lazy(() => import('./pages/Profile'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const PostListPage = lazy(() => import('./pages/PostListPage'));
+const PostPage = lazy(() => import('./pages/PostPage'));
+const JournalPage = lazy(() => import('./pages/JournalPage'));
+const Trash = lazy(() => import('./pages/Trash'));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { currentUser, loading } = useAuth();
+  const { user, loading } = useAuth();
   if (loading) return null;
-  if (!currentUser) return <Navigate to="/login" />;
+  if (!user) return <Navigate to="/login" />;
   return <>{children}</>;
 };
 
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { currentUser, loading, isAdmin, isModerator } = useAuth();
+  const { user, loading, isAdmin, isModerator } = useAuth();
   if (loading) return null;
-  if (!currentUser || (!isAdmin && !isModerator)) return <Navigate to="/" />;
+  if (!user || (!isAdmin && !isModerator)) return <Navigate to="/" />;
   return <>{children}</>;
 };
+
+const AppContent = () => {
+  const { isDyslexicFont } = useFont();
+
+  useEffect(() => {
+    if (isDyslexicFont) {
+      document.body.classList.add('font-opendyslexic');
+    } else {
+      document.body.classList.remove('font-opendyslexic');
+    }
+  }, [isDyslexicFont]);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background text-surface font-sans selection:bg-accent selection:text-white">
+      <Header />
+      <FloatingAccessibilityMenu />
+      <main className="flex-grow container mx-auto px-4 py-8">
+        <Suspense fallback={<div>Loading...</div>}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            
+            <Route path="/posts" element={<PostListPage />} />
+            <Route path="/posts/:slug" element={<PostPage />} /> 
+            
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/journal" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
+
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/trash" element={<AdminRoute><Trash /></AdminRoute>} />
+          </Routes>
+        </Suspense>
+      </main>
+      
+      <footer className="w-full py-8 mt-auto glass-panel">
+        <div className="container mx-auto px-4 text-center text-surface/60 text-xs">
+          <p className="mb-4">
+            Disclaimer: The Chiari Voices Foundation does not provide medical advice. The information on this website is for informational and educational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
+          </p>
+          <p>
+            © 2025 The Chiari Voices Foundation. All Rights Reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+  )
+}
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="flex flex-col min-h-screen bg-background text-surface font-sans selection:bg-accent selection:text-white">
-           <Header />
-           <main className="flex-grow container mx-auto px-4 py-8">
-             <Routes>
-               <Route path="/" element={<Home />} />
-               <Route path="/login" element={<Login />} />
-               
-               <Route path="/posts" element={<PostListPage />} />
-               <Route path="/posts/:slug" element={<PostPage />} /> 
-               
-               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-               <Route path="/journal" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
-
-               {/* Admin Routes */}
-               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-               <Route path="/admin/comments" element={<AdminRoute><AdminComments /></AdminRoute>} />
-
-             </Routes>
-           </main>
-           
-           <div className="container mx-auto px-4"><hr className="border-t border-surface/10" /></div>
-           <Footer />
-        </div>
-      </Router>
+      <SymptomSafeProvider>
+        <FontProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </FontProvider>
+      </SymptomSafeProvider>
     </AuthProvider>
   );
 }

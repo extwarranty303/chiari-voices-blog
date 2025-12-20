@@ -11,6 +11,7 @@ import {
   LineElement,
 } from 'chart.js';
 import { useMemo } from 'react';
+import { Timestamp } from 'firebase/firestore';
 
 ChartJS.register(
   CategoryScale,
@@ -28,7 +29,7 @@ interface JournalEntry {
   title: string;
   content: string;
   symptoms: string[];
-  createdAt: any;
+  createdAt: Timestamp;
 }
 
 interface SymptomChartProps {
