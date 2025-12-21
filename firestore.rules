@@ -48,8 +48,8 @@ service cloud.firestore {
     }
 
     match /journalEntries/{journalEntryId} {
-      allow create: if isOwner(request.resource.data.userId);
-      allow read, update, delete: if isOwner(resource.data.userId);
+      allow read, write, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null;
     }
   }
 }

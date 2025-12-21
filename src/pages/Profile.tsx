@@ -1,60 +1,102 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { db, storage, auth } from '../firebase';
 import { doc, updateDoc, getDoc, collection, getDocs, where, query, documentId } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateProfile } from 'firebase/auth';
-import { GlassPanel, Button, Input, Textarea } from '../components/ui';
-import { ArrowLeft, Edit, Camera, X, Bookmark } from 'lucide-react';
+import { GlassPanel, Button } from '../components/ui';
+import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Tabs } from '../components/Tabs';
+import { ProfileForm, BookmarkedPosts, UserActivity, AccessibilitySettings } from '../components/profile';
+import CVPlaceholder from '../assets/images/cv-placeholder.svg';
+
+// ... interfaces remain the same ...
 
 interface BookmarkedPost {
     id: string;
     title: string;
     slug: string;
+    excerpt: string;
 }
 
 interface UserData {
+    firstName?: string;
+    lastName?: string;
     bio?: string;
     bookmarkedPosts?: string[];
+    isPublic?: boolean;
 }
 
+interface Comment {
+  id: string;
+  postId: string;
+  postTitle: string;
+  content: string;
+  createdAt: Date;
+}
+
+
 export default function Profile() {
-  const { user: authUser, logout } = useAuth();
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [displayName, setDisplayName] = useState('');
+  const { user: authUser, loading: authLoading, logout } = useAuth(); // Assuming useAuth exposes a loading state
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [bio, setBio] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [bookmarkedPosts, setBookmarkedPosts] = useState<BookmarkedPost[]>([]);
+  const [userComments, setUserComments] = useState<Comment[]>([]);
+  const [memberSince, setMemberSince] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (authUser) {
-      setDisplayName(authUser.displayName || '');
+    // Ensure auth state is determined and user object is available
+    if (!authLoading && authUser && authUser.uid) {
       const userDocRef = doc(db, 'users', authUser.uid);
+
+      if (auth.currentUser?.metadata?.creationTime) {
+        setMemberSince(new Date(auth.currentUser.metadata.creationTime).getFullYear().toString());
+      }
+
+      // Fetch user profile data
       getDoc(userDocRef).then(async (docSnap) => {
         if (docSnap.exists()) {
           const userData = docSnap.data() as UserData;
-          setBio(userData?.bio || '');
-          if (userData?.bookmarkedPosts && userData.bookmarkedPosts.length > 0) {
+          setFirstName(userData.firstName || '');
+          setLastName(userData.lastName || '');
+          setBio(userData.bio || '');
+          setIsPublic(userData.isPublic || false);
+
+          if (userData.bookmarkedPosts && userData.bookmarkedPosts.length > 0) {
             const postsQuery = query(collection(db, 'posts'), where(documentId(), 'in', userData.bookmarkedPosts));
             const postsSnap = await getDocs(postsQuery);
-            const posts = postsSnap.docs.map(doc => ({ id: doc.id, title: (doc.data() as any).title, slug: (doc.data() as any).slug }));
-            setBookmarkedPosts(posts);
+            setBookmarkedPosts(postsSnap.docs.map(d => ({ id: d.id, ...(d.data() as any) })));
           }
         }
       });
-    }
-  }, [authUser]);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
+      // Fetch user comments
+      const commentsQuery = query(collection(db, 'comments'), where('userId', '==', authUser.uid));
+      getDocs(commentsQuery).then(async (commentsSnap) => {
+        const comments = await Promise.all(commentsSnap.docs.map(async (commentDoc) => {
+          const commentData = commentDoc.data();
+          const postDoc = await getDoc(doc(db, 'posts', commentData.postId));
+          return {
+            id: commentDoc.id,
+            postTitle: postDoc.data()?.title || 'Untitled Post',
+            ...commentData,
+          } as Comment;
+        }));
+        setUserComments(comments);
+      });
+      setIsLoading(false);
+    } else if (!authLoading) {
+        setIsLoading(false); // Stop loading if there's no user
     }
-  };
+  }, [authUser, authLoading]);
 
   const handleSaveChanges = async () => {
     if (!authUser || !auth.currentUser) return;
@@ -62,30 +104,31 @@ export default function Profile() {
 
     try {
       let newPhotoURL = authUser.photoURL;
-
       if (avatarFile) {
         const avatarRef = ref(storage, `avatars/${authUser.uid}`);
         await uploadBytes(avatarRef, avatarFile);
         newPhotoURL = await getDownloadURL(avatarRef);
       }
+      
+      const newDisplayName = `${firstName} ${lastName}`.trim();
 
       await updateProfile(auth.currentUser, {
-        displayName: displayName,
+        displayName: newDisplayName,
         photoURL: newPhotoURL,
       });
 
       const userDocRef = doc(db, 'users', authUser.uid);
       await updateDoc(userDocRef, {
-        displayName: displayName,
+        firstName,
+        lastName,
         photoURL: newPhotoURL,
-        bio: bio,
+        bio,
+        isPublic,
       });
       
       alert('Profile updated successfully!');
-      setIsEditMode(false);
       setAvatarFile(null);
       setAvatarPreview(null);
-      window.location.reload();
     } catch (err: any) {
       console.error("Error updating profile:", err);
       alert('Failed to update profile. Please try again.');
@@ -94,102 +137,67 @@ export default function Profile() {
     }
   };
   
-  const handleCancelEdit = () => {
-    setIsEditMode(false);
-    setAvatarFile(null);
-    setAvatarPreview(null);
-    if (authUser) {
-      setDisplayName(authUser.displayName || '');
-    }
-  }
+  const tabs = [
+    { label: 'Edit Profile', content: <ProfileForm 
+        firstName={firstName}
+        setFirstName={setFirstName}
+        lastName={lastName}
+        setLastName={setLastName}
+        bio={bio}
+        setBio={setBio}
+        isPublic={isPublic}
+        setIsPublic={setIsPublic}
+        setAvatarFile={setAvatarFile}
+        avatarPreview={avatarPreview}
+        setAvatarPreview={setAvatarPreview}
+        handleSaveChanges={handleSaveChanges}
+        isSaving={isSaving}
+    /> },
+    { label: 'Bookmarked Posts', content: <BookmarkedPosts posts={bookmarkedPosts} /> },
+    { label: 'My Activity', content: <UserActivity comments={userComments} /> },
+    { label: 'Accessibility', content: <AccessibilitySettings /> },
+  ];
 
+  if (isLoading) {
+    return <div className="text-center p-8">Loading profile...</div>;
+  }
+  
   if (!authUser) {
-    return <div>Loading...</div>;
+    return <div className="text-center p-8">Please log in to view your profile.</div>;
   }
 
   return (
-    <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2">
-          <Link to="/" className="inline-flex items-center text-surface/60 hover:text-accent mb-6 transition-colors">
+    <div className="max-w-4xl mx-auto">
+        <Link to="/" className="inline-flex items-center text-surface/60 hover:text-accent mb-6 transition-colors">
             <ArrowLeft size={18} className="mr-2" /> Back to Home
-          </Link>
-          <GlassPanel className="p-8">
-            <div className="flex justify-end mb-4">
-                {!isEditMode ? (
-                    <Button variant="secondary" size="sm" onClick={() => setIsEditMode(true)}>
-                        <Edit size={16} className="mr-2" /> Edit Profile
-                    </Button>
-                ) : (
-                     <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
-                        <X size={16} className="mr-2" /> Cancel
-                    </Button>
-                )}
-            </div>
-
-            <div className="flex flex-col items-center">
-                <div className="relative w-24 h-24 mb-4">
+        </Link>
+        <GlassPanel className="p-8">
+            <div className="flex items-start space-x-8">
+                <div className="flex-shrink-0">
                     <img 
-                        src={avatarPreview || authUser.photoURL || '/default-avatar.png'} 
+                        src={avatarPreview || authUser.photoURL || CVPlaceholder} 
                         alt="Profile" 
-                        className="w-full h-full rounded-full border-2 border-accent/50 object-cover"
+                        className="w-24 h-24 rounded-full border-2 border-accent/50 object-cover"
                     />
-                    {isEditMode && (
-                        <label htmlFor="avatar-upload" className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full cursor-pointer text-white opacity-0 hover:opacity-100 transition-opacity">
-                            <Camera size={24} />
-                            <input id="avatar-upload" type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
-                        </label>
-                    )}
                 </div>
-
-                {!isEditMode ? (
-                  <>
-                    <h1 className="text-2xl font-bold text-white">{displayName || 'Anonymous User'}</h1>
-                    <p className="text-surface/60">{authUser.email}</p>
-                    {bio && <p className="text-center mt-4 text-surface/80">{bio}</p>}
-                    <Button onClick={logout} className="mt-6">
-                        Log Out
-                    </Button>
-                  </>
-                ) : (
-                  <div className="w-full space-y-4">
-                    <Input
-                        label="Display Name"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="Your Name"
-                    />
-                    <Textarea
-                        label="Bio"
-                        value={bio}
-                        onChange={(e) => setBio(e.target.value)}
-                        placeholder="Tell us a little about yourself..."
-                        rows={4}
-                    />
-                    <div className="flex justify-end gap-4 mt-4">
-                        <Button onClick={handleSaveChanges} disabled={isSaving}>
-                            {isSaving ? 'Saving...' : 'Save Changes'}
+                <div className="flex-grow">
+                     <div className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-2xl font-bold text-white">{`${firstName} ${lastName}`.trim() || 'Anonymous User'}</h1>
+                            <p className="text-surface/60">{authUser.email}</p>
+                            {memberSince && <p className="text-sm text-surface/50 mt-1">Member since {memberSince}</p>}
+                        </div>
+                        <Button onClick={logout}>
+                            Log Out
                         </Button>
-                    </div>
-                  </div>
-                )}
+                     </div>
+                     <p className="mt-4 text-surface/80">{bio}</p>
+                </div>
             </div>
-          </GlassPanel>
-      </div>
-      
-      <div className="mt-12 lg:mt-0">
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Bookmark /> Bookmarked Stories</h2>
-        <div className="space-y-4">
-            {bookmarkedPosts.length > 0 ? bookmarkedPosts.map(post => (
-                <Link to={`/posts/${post.slug}`} key={post.id}>
-                    <GlassPanel className="p-4 hover:bg-surface/20 transition-colors">
-                        <h3 className="font-medium text-white truncate">{post.title}</h3>
-                    </GlassPanel>
-                </Link>
-            )) : (
-                <p className="text-surface/60 text-sm">You haven't bookmarked any stories yet.</p>
-            )}
-        </div>
-      </div>
+            <div className="mt-8">
+                <Tabs tabs={tabs} />
+            </div>
+        </GlassPanel>
     </div>
   );
 }

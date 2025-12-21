@@ -1,3 +1,4 @@
+
 import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -7,6 +8,7 @@ import { FontProvider } from './context/FontContext';
 import { useFont } from './hooks/useFont';
 import { Header } from './components/layout';
 import { FloatingAccessibilityMenu } from './components/layout/FloatingAccessibilityMenu';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
@@ -55,8 +57,24 @@ const AppContent = () => {
             <Route path="/posts" element={<PostListPage />} />
             <Route path="/posts/:slug" element={<PostPage />} /> 
             
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/journal" element={<ProtectedRoute><JournalPage /></ProtectedRoute>} />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <ErrorBoundary>
+                    <Profile />
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/journal" 
+              element={
+                <ProtectedRoute>
+                  <JournalPage />
+                </ProtectedRoute>
+              } 
+            />
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

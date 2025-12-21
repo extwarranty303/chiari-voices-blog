@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { GlassPanel } from '../components/ui';
 import { Search } from 'lucide-react';
 import SEO from '../components/SEO';
-import heroImageUrl from '../assets/images/blog-hero.jpg';
+import heroImageUrl from '../assets/images/blog-homepage-hero_one.png';
 
 interface BlogPost {
   id: string;
@@ -91,15 +91,17 @@ export default function PostListPage() {
         description="Browse the latest stories and articles from the Chiari Voices community."
       />
       
-      <div className="w-full h-80 rounded-xl overflow-hidden relative">
-        <img src={heroImageUrl} alt="A person standing on a cliff overlooking a sunrise" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/30 flex flex-col justify-center items-center text-center p-4">
-          <h1 className="text-4xl md:text-6xl font-bold text-text tracking-tight drop-shadow-lg">
-            Understanding Chiari Malformation
-          </h1>
-          <p className="text-xl md:text-2xl text-text/90 mt-2 drop-shadow-md">
-            Finding Hope & Support
-          </p>
+      <div className="w-screen h-[40vh] relative left-1/2 -translate-x-1/2">
+        <img src={heroImageUrl} alt="A vibrant, abstract image of a brain in a forest, representing thought and community" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-center p-4">
+          <div className="max-w-7xl mx-auto px-4">
+            <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight drop-shadow-lg">
+              Understanding Chiari Malformation
+            </h1>
+            <p className="text-xl md:text-2xl text-white/90 mt-2 drop-shadow-md">
+              Finding Hope & Support
+            </p>
+          </div>
         </div>
       </div>
 
