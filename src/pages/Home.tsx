@@ -56,10 +56,10 @@ export default function Home() {
       <div className="w-screen h-[50vh] relative left-1/2 -translate-x-1/2">
         <img src={heroImageUrl} alt="A vibrant, abstract image of a brain in a forest, representing thought and community" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-center p-4">
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tighter drop-shadow-lg">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tighter drop-shadow-lg">
             Sharing Stories. Finding Strength.
           </h1>
-          <p className="text-lg md:text-xl text-white/80 max-w-3xl mx-auto drop-shadow-md">
+          <p className="text-base md:text-lg text-white/80 max-w-3xl mx-auto drop-shadow-md">
             Welcome to Chiari Voices, a safe and supportive community blog for individuals and families navigating the complexities of Chiari Malformation.
           </p>
         </div>

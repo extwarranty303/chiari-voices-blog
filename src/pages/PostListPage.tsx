@@ -95,10 +95,10 @@ export default function PostListPage() {
         <img src={heroImageUrl} alt="A vibrant, abstract image of a brain in a forest, representing thought and community" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-center p-4">
           <div className="max-w-7xl mx-auto px-4">
-            <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight drop-shadow-lg">
+            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight drop-shadow-lg">
               Understanding Chiari Malformation
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 mt-2 drop-shadow-md">
+            <p className="text-lg md:text-xl text-white/90 mt-2 drop-shadow-md">
               Finding Hope & Support
             </p>
           </div>
