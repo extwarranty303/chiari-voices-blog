@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -29,6 +29,7 @@ export default function PostPage() {
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -71,8 +72,10 @@ export default function PostPage() {
   }, [slug]);
 
   useEffect(() => {
-    if (post) {
-      document.querySelectorAll('#post-content pre code').forEach((block) => {
+    if (post?.content && contentRef.current) {
+      const sanitizedContent = DOMPurify.sanitize(post.content, { USE_PROFILES: { html: true } });
+      contentRef.current.innerHTML = sanitizedContent;
+      contentRef.current.querySelectorAll('pre code').forEach((block) => {
         hljs.highlightElement(block as HTMLElement);
       });
     }
@@ -90,8 +93,6 @@ export default function PostPage() {
       </div>
     );
   }
-  
-  const sanitizedPostContent = DOMPurify.sanitize(post.content, { USE_PROFILES: { html: true } });
 
   return (
     <div className="max-w-4xl mx-auto space-y-12">
@@ -134,8 +135,8 @@ export default function PostPage() {
 
                 <div 
                   id="post-content" 
+                  ref={contentRef}
                   className="prose prose-invert prose-lg max-w-none mx-auto text-text/90 prose-headings:text-text prose-a:text-accent prose-strong:text-text prose-blockquote:border-accent"
-                  dangerouslySetInnerHTML={{ __html: sanitizedPostContent }}
                 ></div>
                 
                 {post.tags && post.tags.length > 0 && (
