@@ -37,7 +37,7 @@ export default function PostPage() {
       setLoading(true);
       try {
         const postsRef = collection(db, 'posts');
-        const q = query(postsRef, where("slug", "==", slug));
+        const q = query(postsRef, where("slug", "==", slug), where("status", "==", "published"));
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {

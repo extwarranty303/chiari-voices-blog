@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('/fonts/OpenDyslexic-Regular.woff2') format('woff2'),
+       url('/fonts/OpenDyslexic-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   --font-display: 'Space Grotesk', system-ui, sans-serif;
@@ -30,6 +38,21 @@
   .text-muted {
     color: var(--color-muted);
   }
+}
+
+.font-opendyslexic {
+  font-family: 'OpenDyslexic', var(--font-sans);
+}
+
+.symptom-safe img,
+.symptom-safe .symptom-trigger-image {
+  filter: blur(16px);
+  transition: filter 0.3s ease-in-out;
+}
+
+.symptom-safe:hover img,
+.symptom-safe:hover .symptom-trigger-image {
+  filter: blur(0);
 }
 
 .glass-panel {

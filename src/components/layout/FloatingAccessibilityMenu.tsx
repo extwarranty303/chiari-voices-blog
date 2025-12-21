@@ -1,13 +1,10 @@
 
-import { Settings, BookOpen, BookOpenCheck, Shield, X } from 'lucide-react';
-import { useSymptomSafe } from '../../hooks/useSymptomSafe';
-import { useFont } from '../../hooks/useFont';
+import { Settings, X } from 'lucide-react';
 import { GlassPanel } from '../ui';
 import { useState } from 'react';
+import AccessibilityToggles from './AccessibilityToggles';
 
 export function FloatingAccessibilityMenu() {
-  const { isSymptomSafe, toggleSymptomSafe } = useSymptomSafe();
-  const { isDyslexicFont, toggleDyslexicFont } = useFont();
   const [isOpen, setIsOpen] = useState(false);
 
   if (!isOpen) {
@@ -30,14 +27,7 @@ export function FloatingAccessibilityMenu() {
           <X size={20} />
         </button>
       </div>
-      <button onClick={toggleDyslexicFont} className="flex items-center gap-3 text-surface hover:text-white transition-colors">
-        {isDyslexicFont ? <BookOpenCheck size={20} /> : <BookOpen size={20} />}
-        <span>{isDyslexicFont ? "Default Font" : "Dyslexic Font"}</span>
-      </button>
-      <button onClick={toggleSymptomSafe} className="flex items-center gap-3 text-surface hover:text-white transition-colors">
-        <Shield size={20} />
-        <span>{isSymptomSafe ? "Default Mode" : "Symptom-Safe"}</span>
-      </button>
+      <AccessibilityToggles />
     </GlassPanel>
   );
 }
