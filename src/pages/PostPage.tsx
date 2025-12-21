@@ -29,7 +29,6 @@ export default function PostPage() {
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sanitizedPostContent, setSanitizedPostContent] = useState('');
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -73,18 +72,11 @@ export default function PostPage() {
 
   useEffect(() => {
     if (post) {
-      const sanitized = DOMPurify.sanitize(post.content, { USE_PROFILES: { html: true } });
-      setSanitizedPostContent(sanitized);
-    }
-  }, [post]);
-
-  useEffect(() => {
-    if (sanitizedPostContent) {
       document.querySelectorAll('#post-content pre code').forEach((block) => {
         hljs.highlightElement(block as HTMLElement);
       });
     }
-  }, [sanitizedPostContent]);
+  }, [post]);
 
   if (loading) {
     return <div className="text-center p-8 text-text">Loading post...</div>;
@@ -98,6 +90,8 @@ export default function PostPage() {
       </div>
     );
   }
+  
+  const sanitizedPostContent = DOMPurify.sanitize(post.content, { USE_PROFILES: { html: true } });
 
   return (
     <div className="max-w-4xl mx-auto space-y-12">
