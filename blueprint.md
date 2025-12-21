@@ -42,6 +42,7 @@ This document outlines the plan for building a comprehensive, AI-powered blog pl
     *   Create a dedicated, responsive login page.
     *   Implement authentication via Email/Password, Google, and Facebook.
     *   Implement a password reset flow for email-based accounts.
+    *   Fixed an issue causing a blank screen after login by ensuring component state is not updated after unmounting.
 *   [x] **User Roles & Security:**
     *   Define three user roles: `admin`, `moderator`, and `user`.
     *   Set up Firestore Security Rules to enforce permissions based on these roles.
@@ -52,7 +53,8 @@ This document outlines the plan for building a comprehensive, AI-powered blog pl
 *   [x] **Admin Dashboard:** Create a secure dashboard accessible only to `admin` and `moderator` roles.
 *   [x] **Post Creation & Editing:**
     *   Build a `PostEditor` component.
-    *   Integrate a full-featured WYSIWYG editor with a "Source Code" view.
+    *   Integrate a full-featured WYSIWYG editor (Tiptap) with a "Source Code" view.
+    *   Enhanced the Tiptap editor to automatically sanitize pasted HTML, stripping unwanted styles while preserving semantic formatting (headings, bold, lists, etc.).
     *   Enable fields for `title`, `content` (HTML), and `tags`.
 *   [x] **Media Handling:**
     *   Allow image and video uploads directly to Cloud Storage.

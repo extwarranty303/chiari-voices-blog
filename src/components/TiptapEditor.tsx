@@ -3,6 +3,7 @@ import { useCallback, useEffect } from 'react';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
 import { Bold, Italic, Strikethrough, Link as LinkIcon, List, ListOrdered, Quote, Heading2 } from 'lucide-react';
 import { Button } from './ui';
 import '../styles/tiptap.css';
@@ -34,7 +35,7 @@ const TiptapToolbar = ({ editor }: TiptapToolbarProps) => {
       <Button type="button" variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'} size="icon" onClick={() => editor.chain().focus().toggleBulletList().run()}><List size={16} /></Button>
       <Button type="button" variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'} size="icon" onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered size={16} /></Button>
       <Button type="button" variant={editor.isActive('blockquote') ? 'secondary' : 'ghost'} size="icon" onClick={() => editor.chain().focus().toggleBlockquote().run()}><Quote size={16} /></Button>
-      <Button type="button" variant={'ghost'} size="icon" onClick={setLink}><LinkIcon size={16} /></Button>
+      <Button type="button" variant={editor.isActive('link') ? 'secondary' : 'ghost'} size="icon" onClick={setLink}><LinkIcon size={16} /></Button>
     </div>
   );
 };
@@ -48,10 +49,14 @@ export default function TiptapEditor({ value, onChange }: TiptapEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        link: { openOnClick: false, autolink: true },
         heading: { levels: [1, 2, 3] },
+        link: false,
       }),
       Image.configure({ inline: true }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+      }),
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -60,6 +65,13 @@ export default function TiptapEditor({ value, onChange }: TiptapEditorProps) {
     editorProps: {
         attributes: {
             class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none p-4',
+        },
+        transformPastedHTML(html) {
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = html;
+          tempDiv.querySelectorAll('[style]').forEach(node => node.removeAttribute('style'));
+          tempDiv.querySelectorAll('[class]').forEach(node => node.removeAttribute('class'));
+          return tempDiv.innerHTML;
         },
     }
   });

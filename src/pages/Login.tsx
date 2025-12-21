@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   signInWithEmailAndPassword, 
@@ -23,9 +23,17 @@ export default function Login() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<null | 'google' | 'facebook'>(null);
   const navigate = useNavigate();
+  const mounted = useRef(true);
 
-  // Helper to handle redirect based on role
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
   const handleRoleRedirect = async (user: User) => {
     try {
       const userDocRef = doc(db, 'users', user.uid);
@@ -73,9 +81,13 @@ export default function Login() {
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to authenticate');
+      if (mounted.current) {
+        setError(err.message || 'Failed to authenticate');
+      }
     } finally {
-      setLoading(false);
+      if (mounted.current) {
+        setLoading(false);
+      }
     }
   };
   
@@ -89,17 +101,27 @@ export default function Login() {
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      setSuccessMessage('Password reset email sent! Check your inbox.');
+      if (mounted.current) {
+        setSuccessMessage('Password reset email sent! Check your inbox.');
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to send reset email.');
+      if (mounted.current) {
+        setError(err.message || 'Failed to send reset email.');
+      }
     } finally {
-      setLoading(false);
+      if (mounted.current) {
+        setLoading(false);
+      }
     }
   };
 
-  const handleSocialLogin = async (provider: GoogleAuthProvider | FacebookAuthProvider) => {
+  const handleSocialLogin = async (providerName: 'google' | 'facebook') => {
     setError('');
     setSuccessMessage('');
+    setSocialLoading(providerName);
+    
+    const provider = providerName === 'google' ? new GoogleAuthProvider() : new FacebookAuthProvider();
+
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
@@ -120,7 +142,13 @@ export default function Login() {
         await handleRoleRedirect(user);
       }
     } catch (err: any) {
-      setError(err.message);
+      if (mounted.current) {
+        setError(err.message);
+      }
+    } finally {
+      if (mounted.current) {
+        setSocialLoading(null);
+      }
     }
   };
 
@@ -182,7 +210,7 @@ export default function Login() {
             </div>
           )}
           
-          <Button type="submit" className="w-full !mt-6" disabled={loading}>
+          <Button type="submit" className="w-full !mt-6" disabled={loading || socialLoading !== null}>
             {loading ? 'Processing...' : (isLogin ? 'Log In' : 'Sign Up')}
           </Button>
         </form>
@@ -194,11 +222,21 @@ export default function Login() {
         </div>
 
         <div className="space-y-3">
-          <Button variant="secondary" className="w-full" onClick={() => handleSocialLogin(new GoogleAuthProvider())}>
-            Continue with Google
+          <Button 
+            variant="secondary" 
+            className="w-full" 
+            onClick={() => handleSocialLogin('google')}
+            disabled={loading || socialLoading !== null}
+          >
+            {socialLoading === 'google' ? 'Processing...' : 'Continue with Google'}
           </Button>
-          <Button variant="secondary" className="w-full" onClick={() => handleSocialLogin(new FacebookAuthProvider())}>
-            Continue with Facebook
+          <Button 
+            variant="secondary" 
+            className="w-full" 
+            onClick={() => handleSocialLogin('facebook')}
+            disabled={loading || socialLoading !== null}
+          >
+            {socialLoading === 'facebook' ? 'Processing...' : 'Continue with Facebook'}
           </Button>
         </div>
 
