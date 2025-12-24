@@ -118,10 +118,10 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
             } else {
                 await setDoc(doc(collection(db, 'posts')), { ...postData, createdAt: serverTimestamp(), featured: false });
             }
-            alert(`Post saved successfully!`);
-            onClose();
+            // Success feedback is now handled by the editor component
         } catch (error) {
             console.error("Error saving post:", error);
+            alert("Failed to save post. Check console for details.");
         }
     };
     

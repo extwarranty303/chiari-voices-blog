@@ -5,9 +5,10 @@ import { useAuth } from '../hooks/useAuth';
 import { db } from '../lib/firebase';
 import { collection, getDocs, query, orderBy, doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import PostEditor from '../components/PostEditor';
+import PostPreview from '../components/PostPreview';
 import { Button, Input } from '../components/ui';
 import { cn } from '../lib/utils';
-import { Plus, Edit2, FileText, CheckCircle, Pencil, Flag, Loader2, ShieldAlert, Search, X, Trash2 } from 'lucide-react';
+import { Plus, Edit2, FileText, CheckCircle, Pencil, Flag, Loader2, ShieldAlert, Search, X, Trash2, Eye } from 'lucide-react';
 
 interface Post {
   id: string;
@@ -18,6 +19,9 @@ interface Post {
   updatedAt?: Timestamp;
   publishedAt?: Timestamp;
   tags?: string[];
+  imageUrl?: string;
+  readTime?: number;
+  authorName?: string;
 }
 
 interface Comment {
@@ -40,6 +44,7 @@ export default function AdminDashboard() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [previewPost, setPreviewPost] = useState<Post | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'trashed'>('all');
@@ -283,8 +288,9 @@ export default function AdminDashboard() {
                       
                       {/* Actions Column */}
                       <div className="w-[100px] flex justify-end gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditPost(post)} className="h-8 w-8 hover:bg-surface/20 rounded-lg"><Edit2 size={14} /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleTrashPost(post.id)} className="h-8 w-8 text-red-400/70 hover:text-red-400 hover:bg-red-400/10 rounded-lg"><Trash2 size={14} /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setPreviewPost(post)} className="h-8 w-8 hover:bg-accent/20 hover:text-accent rounded-lg" title="Quick Preview"><Eye size={14} /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleEditPost(post)} className="h-8 w-8 hover:bg-surface/20 rounded-lg" title="Edit Post"><Edit2 size={14} /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleTrashPost(post.id)} className="h-8 w-8 text-red-400/70 hover:text-red-400 hover:bg-red-400/10 rounded-lg" title="Trash Post"><Trash2 size={14} /></Button>
                       </div>
                     </div>
                   )) : <div className="p-12 text-center text-surface/30 text-sm">No posts match your criteria.</div>}
@@ -306,6 +312,21 @@ export default function AdminDashboard() {
             />
         )}
       </div>
+
+      {previewPost && (
+          <PostPreview 
+            postData={{
+                title: previewPost.title,
+                content: previewPost.content,
+                authorName: previewPost.authorName,
+                createdAt: previewPost.createdAt,
+                tags: previewPost.tags,
+                readTime: previewPost.readTime,
+                imageUrl: previewPost.imageUrl
+            }}
+            onClose={() => setPreviewPost(null)}
+          />
+      )}
     </div>
   );
 }

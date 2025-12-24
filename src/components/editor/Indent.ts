@@ -4,11 +4,11 @@ declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     indent: {
       /**
-       * Indent the line
+       * Indent the line or sink list item
        */
       indent: () => ReturnType;
       /**
-       * Outdent the line
+       * Outdent the line or lift list item
        */
       outdent: () => ReturnType;
     };
@@ -20,7 +20,7 @@ export const Indent = Extension.create({
 
   addOptions() {
     return {
-      types: ['paragraph', 'heading', 'listItem'],
+      types: ['paragraph', 'heading', 'blockquote'],
       minLevel: 0,
       maxLevel: 8,
     };
@@ -51,8 +51,15 @@ export const Indent = Extension.create({
 
   addCommands() {
     return {
-      indent: () => ({ tr, state, dispatch }) => {
+      indent: () => ({ tr, state, dispatch, editor }) => {
         const { selection } = state;
+        
+        // Handle List Items (Sink)
+        if (editor.isActive('bulletList') || editor.isActive('orderedList') || editor.isActive('taskList')) {
+            return editor.commands.sinkListItem('listItem') || editor.commands.sinkListItem('taskItem');
+        }
+
+        // Handle Paragraphs/Headings (Padding)
         tr = tr.setSelection(selection);
         state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
           if (this.options.types.includes(node.type.name)) {
@@ -65,8 +72,15 @@ export const Indent = Extension.create({
         if (dispatch) dispatch(tr);
         return true;
       },
-      outdent: () => ({ tr, state, dispatch }) => {
+      outdent: () => ({ tr, state, dispatch, editor }) => {
         const { selection } = state;
+
+        // Handle List Items (Lift)
+        if (editor.isActive('bulletList') || editor.isActive('orderedList') || editor.isActive('taskList')) {
+             return editor.commands.liftListItem('listItem') || editor.commands.liftListItem('taskItem');
+        }
+
+        // Handle Paragraphs/Headings (Padding)
         tr = tr.setSelection(selection);
         state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
           if (this.options.types.includes(node.type.name)) {

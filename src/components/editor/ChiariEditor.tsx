@@ -17,11 +17,13 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Typography from '@tiptap/extension-typography';
 import CharacterCount from '@tiptap/extension-character-count';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { Input, Textarea, Label } from '../ui';
 import { DocumentImporter } from './DocumentImporter';
 import { uploadImage } from './ImageUpload';
+import { CheckCircle2, Eye } from 'lucide-react';
+import PostPreview from '../PostPreview';
 
 interface ChiariEditorProps {
     content: string;
@@ -57,6 +59,8 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
     secondaryKeywords, setSecondaryKeywords
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [showSavedMessage, setShowSavedMessage] = useState(false);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
     const editor = useEditor({
         extensions: [
@@ -98,7 +102,7 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
         },
         editorProps: {
             attributes: {
-                class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl m-5 focus:outline-none min-h-[500px]',
+                class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl m-5 focus:outline-none min-h-[500px] text-slate-200',
             },
         },
     });
@@ -137,6 +141,12 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
 
     const triggerImageUpload = () => {
         fileInputRef.current?.click();
+    };
+
+    const handleSaveClick = async () => {
+        await onSave();
+        setShowSavedMessage(true);
+        setTimeout(() => setShowSavedMessage(false), 3000);
     };
 
     return (
@@ -227,34 +237,71 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
                 </div>
             </div>
 
-            <div className="border border-slate-700 rounded-xl relative overflow-hidden bg-slate-950/30">
+            <div className="border border-slate-700 rounded-xl relative bg-slate-950/30 font-sans min-h-[700px] flex flex-col">
                 {/* Sticky Header */}
-                <div className="sticky top-0 z-10 flex flex-wrap justify-between items-center p-2 border-b border-slate-700 bg-slate-950 shadow-lg">
+                <div className="sticky top-[-2px] z-50 flex flex-wrap justify-between items-center p-2 border-b border-slate-700 bg-slate-950 shadow-xl rounded-t-xl">
                     <Toolbar editor={editor} addImage={triggerImageUpload} />
                     <div className="hidden sm:block px-2">
                         <DocumentImporter onImport={handleImport} />
                     </div>
                 </div>
-                <div className="p-2 sm:p-6 bg-slate-950/20 min-h-[600px]">
+                
+                {/* Scrollable Content Area */}
+                <div className="flex-grow p-2 sm:p-6 bg-slate-950/10">
                     <EditorContent editor={editor} />
                 </div>
                 
-                {/* Editor Footer / Info */}
-                <div className="p-3 border-t border-slate-700 bg-slate-950 flex justify-between items-center text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                    <div>{editor?.storage.characterCount.words()} Words</div>
-                    <div>{editor?.storage.characterCount.characters()} Characters</div>
+                {/* Editor Footer */}
+                <div className="p-3 border-t border-slate-700 bg-slate-950 flex justify-between items-center text-[10px] text-slate-500 uppercase tracking-widest font-bold rounded-b-xl">
+                    <div className="flex gap-4">
+                        <span>{editor?.storage.characterCount.words()} Words</span>
+                        <span>{editor?.storage.characterCount.characters()} Characters</span>
+                    </div>
+                    <button 
+                        type="button"
+                        onClick={() => setIsPreviewOpen(true)}
+                        className="flex items-center gap-1.5 text-accent hover:text-accent/80 transition-colors"
+                    >
+                        <Eye size={12} /> Live Preview
+                    </button>
                 </div>
             </div>
             
-             <div className="flex justify-end gap-4 pb-12">
+             <div className="flex items-center justify-end gap-6 pb-12">
+                 {showSavedMessage && (
+                     <div className="flex items-center gap-2 text-green-400 font-medium animate-in fade-in slide-in-from-right-4 duration-300">
+                         <CheckCircle2 size={18} />
+                         <span>Changes saved successfully</span>
+                     </div>
+                 )}
                  <button 
                     type="button"
-                    onClick={onSave}
+                    onClick={() => setIsPreviewOpen(true)}
+                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border border-slate-700 hover:bg-slate-800 text-white h-10 px-6 active:scale-95 transition-all"
+                 >
+                    <Eye size={18} className="mr-2" /> Preview
+                 </button>
+                 <button 
+                    type="button"
+                    onClick={handleSaveClick}
                     className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-accent text-white hover:bg-accent/90 h-10 px-8 shadow-lg shadow-accent/20 active:scale-95"
                  >
                     Save Changes
                  </button>
              </div>
+
+             {isPreviewOpen && (
+                 <PostPreview 
+                    postData={{
+                        title: title || 'Untitled Post',
+                        content: content,
+                        tags: tags,
+                        readTime: editor ? Math.ceil(editor.storage.characterCount.words() / 200) : 0,
+                        imageUrl: undefined // For now, we use external URLs but could handle local previews if needed
+                    }}
+                    onClose={() => setIsPreviewOpen(false)}
+                 />
+             )}
         </div>
     );
 };
