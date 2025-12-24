@@ -159,29 +159,29 @@ export default function AdminDashboard() {
   const showEditor = isCreatingNew || selectedPost !== null;
 
   return (
-    <div className="flex gap-8 h-full">
-      <div className={cn("w-full transition-all duration-300", showEditor ? "lg:w-1/3" : "w-full")}>
+    <div className="flex flex-col lg:flex-row gap-8 h-full relative">
+      <div className={cn("w-full transition-all duration-300", showEditor ? "lg:w-1/3 hidden lg:block" : "w-full")}>
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h1 className="text-3xl font-bold text-surface">Dashboard</h1>
-                <Button onClick={handleNewPost}><Plus size={18} /> New Post</Button>
+                <Button onClick={handleNewPost} className="w-full md:w-auto"><Plus size={18} className="mr-2" /> New Post</Button>
             </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            <button onClick={() => setStatusFilter('all')} className={cn('text-left p-4 rounded-xl bg-surface/5 border border-surface/10 transition-colors', statusFilter === 'all' && 'border-accent')}>
-                <div className="flex justify-between items-center"><h3 className="font-bold">Total Posts</h3><FileText className="text-surface/60" /></div><p className="text-2xl font-bold">{stats.totalPosts}</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <button onClick={() => setStatusFilter('all')} className={cn('text-left p-3 rounded-xl bg-surface/5 border border-surface/10 transition-colors', statusFilter === 'all' && 'border-accent')}>
+                <div className="flex justify-between items-center mb-1"><h3 className="font-bold text-sm">Total</h3><FileText size={16} className="text-surface/60" /></div><p className="text-xl font-bold">{stats.totalPosts}</p>
             </button>
-            <button onClick={() => setStatusFilter('published')} className={cn('text-left p-4 rounded-xl bg-surface/5 border border-surface/10 transition-colors', statusFilter === 'published' && 'border-accent')}>
-                 <div className="flex justify-between items-center"><h3 className="font-bold">Published</h3><CheckCircle className="text-green-400" /></div><p className="text-2xl font-bold">{stats.publishedPosts}</p>
+            <button onClick={() => setStatusFilter('published')} className={cn('text-left p-3 rounded-xl bg-surface/5 border border-surface/10 transition-colors', statusFilter === 'published' && 'border-accent')}>
+                 <div className="flex justify-between items-center mb-1"><h3 className="font-bold text-sm">Live</h3><CheckCircle size={16} className="text-green-400" /></div><p className="text-xl font-bold">{stats.publishedPosts}</p>
             </button>
-            <button onClick={() => setStatusFilter('draft')} className={cn('text-left p-4 rounded-xl bg-surface/5 border border-surface/10 transition-colors', statusFilter === 'draft' && 'border-accent')}>
-                <div className="flex justify-between items-center"><h3 className="font-bold">Drafts</h3><Pencil className="text-yellow-400" /></div><p className="text-2xl font-bold">{stats.draftPosts}</p>
+            <button onClick={() => setStatusFilter('draft')} className={cn('text-left p-3 rounded-xl bg-surface/5 border border-surface/10 transition-colors', statusFilter === 'draft' && 'border-accent')}>
+                <div className="flex justify-between items-center mb-1"><h3 className="font-bold text-sm">Drafts</h3><Pencil size={16} className="text-yellow-400" /></div><p className="text-xl font-bold">{stats.draftPosts}</p>
             </button>
-            <Link to="/admin/trash" className="block p-4 rounded-xl bg-surface/5 border border-surface/10 transition-colors hover:border-accent/70">
-                <div className="flex justify-between items-center"><h3 className="font-bold">Trash</h3><Trash2 className="text-red-400" /></div><p className="text-2xl font-bold">{stats.trashedPosts}</p>
+            <Link to="/admin/trash" className="block p-3 rounded-xl bg-surface/5 border border-surface/10 transition-colors hover:border-accent/70">
+                <div className="flex justify-between items-center mb-1"><h3 className="font-bold text-sm">Trash</h3><Trash2 size={16} className="text-red-400" /></div><p className="text-xl font-bold">{stats.trashedPosts}</p>
             </Link>
-            <Link to="/admin/comments" className="block p-4 rounded-xl bg-surface/5 border border-surface/10 transition-colors hover:border-accent/70">
-                <div className="flex justify-between items-center"><h3 className="font-bold">Reported</h3><Flag className="text-red-400" /></div><p className="text-2xl font-bold">{stats.reportedComments}</p>
+            <Link to="/admin/comments" className="block p-3 rounded-xl bg-surface/5 border border-surface/10 transition-colors hover:border-accent/70">
+                <div className="flex justify-between items-center mb-1"><h3 className="font-bold text-sm">Reported</h3><Flag size={16} className="text-red-400" /></div><p className="text-xl font-bold">{stats.reportedComments}</p>
             </Link>
           </div>
 
@@ -199,69 +199,77 @@ export default function AdminDashboard() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-surface/60" size={20}/>
                 </div>
             </div>
-            <div className="flex flex-wrap gap-2 items-center">
-              <span className="text-sm font-medium text-surface/80 mr-2">Filter by tag:</span>
-              {allTags.length > 0 ? (
-                <>
-                  {allTags.map(tag => (
-                    <button 
-                      key={tag} 
-                      onClick={() => handleTagToggle(tag)}
-                      className={cn(
-                        'px-2.5 py-1 text-xs rounded-full transition-colors',
-                        selectedTags.includes(tag) 
-                          ? 'bg-accent text-background' 
-                          : 'bg-surface/10 hover:bg-surface/20'
-                      )}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                  {selectedTags.length > 0 && 
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedTags([])} className="flex items-center gap-1 text-accent"><X size={14}/>Clear</Button>
-                  }
-                </>
-              ) : (
-                <p className="text-sm text-surface/60">No tags found. Add tags to posts to enable filtering.</p>
-              )}
-            </div>
             
-            <div className="bg-surface/5 rounded-lg overflow-hidden">
-                <div className="flex items-center px-4 py-2 font-bold bg-surface/10 text-sm text-surface/80">
+            {allTags.length > 0 && (
+                <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-sm font-medium text-surface/80 mr-2">Filter by tag:</span>
+                    {allTags.map(tag => (
+                        <button 
+                        key={tag} 
+                        onClick={() => handleTagToggle(tag)}
+                        className={cn(
+                            'px-2.5 py-1 text-xs rounded-full transition-colors',
+                            selectedTags.includes(tag) 
+                            ? 'bg-accent text-background' 
+                            : 'bg-surface/10 hover:bg-surface/20'
+                        )}
+                        >
+                        {tag}
+                        </button>
+                    ))}
+                    {selectedTags.length > 0 && 
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedTags([])} className="flex items-center gap-1 text-accent"><X size={14}/>Clear</Button>
+                    }
+                </div>
+            )}
+            
+            <div className="bg-surface/5 rounded-lg overflow-hidden border border-surface/10">
+                <div className="flex items-center px-4 py-3 font-bold bg-surface/10 text-xs uppercase tracking-wider text-surface/70">
                     <div className="flex-grow">Title</div>
-                    <div className="w-28 text-center">Status</div>
-                    <div className="w-28 text-center">Created</div>
-                    <div className="w-28 text-center">Published</div>
-                    <div className="w-28 text-center">Updated</div>
-                    <div className="w-32 text-center">Actions</div>
+                    <div className="w-20 text-center hidden sm:block">Status</div>
+                    <div className="w-24 text-center hidden md:block">Created</div>
+                    <div className="w-24 text-center hidden lg:block">Published</div>
+                    <div className="w-24 text-center hidden xl:block">Updated</div>
+                    <div className="w-24 text-center">Actions</div>
                 </div>
                 <div className="divide-y divide-surface/10">
                   {filteredPosts.length > 0 ? filteredPosts.map(post => (
-                    <div key={post.id} className="flex items-center px-4 py-3 group hover:bg-surface/10 transition-colors">
-                      <div className="flex-grow min-w-0">
-                        <p className="font-medium text-surface truncate group-hover:underline">{post.title}</p>
+                    <div key={post.id} className="flex items-center px-4 py-4 group hover:bg-surface/5 transition-colors">
+                      <div className="flex-grow min-w-0 pr-4">
+                        <p className="font-medium text-surface truncate group-hover:text-accent transition-colors">{post.title}</p>
+                        {/* Mobile-only status indicator */}
+                        <div className="sm:hidden mt-1 flex items-center gap-2">
+                             <span className={cn(
+                                'w-2 h-2 rounded-full',
+                                post.status === 'published' ? 'bg-green-400' : 'bg-yellow-400'
+                             )} />
+                             <span className="text-xs text-surface/50 capitalize">{post.status}</span>
+                        </div>
                       </div>
-                      <div className="w-28 text-center">
+                      
+                      <div className="w-20 text-center hidden sm:block">
                          <span className={cn(
-                           'px-2 py-1 text-xs rounded-full font-medium',
-                           post.status === 'published' ? 'bg-green-400/10 text-green-300' : 'bg-yellow-400/10 text-yellow-300'
+                           'px-2 py-1 text-[10px] uppercase tracking-wider rounded-full font-bold',
+                           post.status === 'published' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
                          )}>{post.status}</span>
                       </div>
-                      <div className="w-28 text-center text-xs text-surface/60">
+                      
+                      <div className="w-24 text-center text-xs text-surface/60 hidden md:block font-mono">
                         {post.createdAt?.seconds ? new Date(post.createdAt.seconds * 1000).toLocaleDateString() : '-'}
                       </div>
-                      <div className="w-28 text-center text-xs text-surface/60">
+                      <div className="w-24 text-center text-xs text-surface/60 hidden lg:block font-mono">
                         {post.publishedAt?.seconds ? new Date(post.publishedAt.seconds * 1000).toLocaleDateString() : '-'}
                       </div>
-                      <div className="w-28 text-center text-xs text-surface/60">
+                      <div className="w-24 text-center text-xs text-surface/60 hidden xl:block font-mono">
                         {post.updatedAt?.seconds ? new Date(post.updatedAt.seconds * 1000).toLocaleDateString() : '-'}
                       </div>
-                      <div className="w-32 flex justify-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditPost(post)} className="h-8 w-8"><Edit2 size={16} /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleTrashPost(post.id)} className="h-8 w-8 text-red-400/70 hover:text-red-400"><Trash2 size={16} /></Button>
+                      
+                      <div className="w-24 flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditPost(post)} className="h-8 w-8 hover:bg-surface/20"><Edit2 size={16} /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleTrashPost(post.id)} className="h-8 w-8 text-red-400/70 hover:text-red-400 hover:bg-red-400/10"><Trash2 size={16} /></Button>
                       </div>
                     </div>
-                  )) : <p className="text-surface/60 p-4 text-center">No posts match your criteria.</p>}
+                  )) : <div className="p-8 text-center text-surface/50">No posts match your criteria.</div>}
                 </div>
             </div>
           </div>
@@ -269,8 +277,8 @@ export default function AdminDashboard() {
       </div>
 
       <div className={cn(
-          "fixed top-0 right-0 h-full z-50 transition-transform duration-500 ease-in-out",
-          "w-full lg:w-2/3 bg-background/80 backdrop-blur-xl border-l border-surface/10 overflow-y-auto",
+          "fixed top-0 right-0 h-full z-50 transition-transform duration-500 ease-in-out shadow-2xl",
+          "w-full lg:w-2/3 bg-background/95 backdrop-blur-xl border-l border-surface/10 overflow-y-auto",
           showEditor ? "translate-x-0" : "translate-x-full"
       )}>
         {showEditor && (
