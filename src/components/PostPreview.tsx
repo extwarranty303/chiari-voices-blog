@@ -24,7 +24,16 @@ interface PostPreviewProps {
 
 export default function PostPreview({ postData, onClose }: PostPreviewProps) {
     const sanitizedPostContent = useMemo(() => {
-        return DOMPurify.sanitize(postData.content, { USE_PROFILES: { html: true } });
+        return DOMPurify.sanitize(postData.content, {
+            ALLOWED_TAGS: [
+                'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 
+                'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'img', 
+                'span', 'div', 'pre', 'code'
+            ],
+            ALLOWED_ATTR: [
+                'href', 'target', 'src', 'alt', 'class', 'style', 'title'
+            ]
+        });
     }, [postData.content]);
 
     useEffect(() => {
@@ -52,7 +61,7 @@ export default function PostPreview({ postData, onClose }: PostPreviewProps) {
                     <div className="max-w-4xl mx-auto">
                         <article>
                             <header className="mb-8">
-                                <h1 className="text-4xl md:text-5xl font-extrabold text-text leading-tight mb-3">{postData.title}</h1>
+                                <h1 className="text-4xl md:text-5xl font-extrabold text-surface leading-tight mb-3">{postData.title}</h1>
                                 {postData.readTime && (
                                     <div className="flex items-center gap-2 text-muted text-sm mt-4">
                                         <Clock size={16} />
@@ -64,11 +73,11 @@ export default function PostPreview({ postData, onClose }: PostPreviewProps) {
                             <GlassPanel className="p-12">
                                 <div className="flex items-center justify-between text-muted border-b border-border/10 pb-4 mb-8">
                                     <div className="flex items-center gap-6">
-                                      <span className="flex items-center gap-2">
+                                      <span className="flex items-center gap-2 text-surface/80">
                                         <UserIcon size={18} />
-                                        <span className="font-medium text-text">{postData.authorName || 'Chiari Voices Admin'}</span>
+                                        <span className="font-medium">{postData.authorName || 'Chiari Voices Admin'}</span>
                                       </span>
-                                      <span className="flex items-center gap-2">
+                                      <span className="flex items-center gap-2 text-surface/60">
                                         <Calendar size={18} />
                                         <span>{postData.createdAt?.seconds ? format(new Date(postData.createdAt.seconds * 1000), 'MMMM d, yyyy') : format(new Date(), 'MMMM d, yyyy')}</span>
                                       </span>
@@ -79,13 +88,13 @@ export default function PostPreview({ postData, onClose }: PostPreviewProps) {
 
                                 <div
                                     id="preview-content"
-                                    className="prose prose-invert prose-lg max-w-none mx-auto text-text/90 prose-headings:text-text prose-a:text-accent prose-strong:text-text prose-blockquote:border-accent"
+                                    className="prose prose-invert prose-lg max-w-none mx-auto text-surface/90"
                                     dangerouslySetInnerHTML={{ __html: sanitizedPostContent }}
                                 ></div>
 
                                 {postData.tags && postData.tags.length > 0 && (
                                     <div className="mt-8 pt-6 border-t border-border/10 flex flex-wrap items-center gap-3">
-                                        <span className="font-semibold text-text"><Tag size={16} /></span>
+                                        <span className="font-semibold text-surface"><Tag size={16} /></span>
                                         {postData.tags.map(tag => (
                                             <span key={tag} className="px-3 py-1 text-sm rounded-full bg-accent/10 text-accent">
                                                 {tag}

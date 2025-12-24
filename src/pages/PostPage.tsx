@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -8,6 +8,7 @@ import { ShareButtons } from '../components/ShareButtons';
 import SEO from '../components/SEO';
 import { ArrowLeft, Calendar, Clock, Tag, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui';
+import DOMPurify from 'dompurify';
 
 interface Post {
     id: string;
@@ -33,7 +34,6 @@ export default function PostPage() {
             if (!slug) return;
             setLoading(true);
             try {
-                // Try finding by slug first
                 const q = query(collection(db, 'posts'), where('slug', '==', slug));
                 const querySnapshot = await getDocs(q);
 
@@ -41,7 +41,6 @@ export default function PostPage() {
                     const docData = querySnapshot.docs[0].data();
                     setPost({ id: querySnapshot.docs[0].id, ...docData } as Post);
                 } else {
-                    // Fallback: Try ID if slug lookup failed (legacy support or direct ID access)
                     const docRef = doc(db, 'posts', slug);
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
@@ -58,6 +57,20 @@ export default function PostPage() {
         fetchPost();
     }, [slug]);
 
+    const sanitizedContent = useMemo(() => {
+        if (!post?.content) return '';
+        return DOMPurify.sanitize(post.content, {
+            ALLOWED_TAGS: [
+                'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'ul', 'ol', 'li', 
+                'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'img', 
+                'span', 'div', 'pre', 'code'
+            ],
+            ALLOWED_ATTR: [
+                'href', 'target', 'src', 'alt', 'class', 'style', 'title'
+            ]
+        });
+    }, [post?.content]);
+
     if (loading) return <div className="flex justify-center items-center h-[50vh]"><Loader2 className="animate-spin text-accent" size={40} /></div>;
     
     if (!post) return (
@@ -71,7 +84,7 @@ export default function PostPage() {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
              <SEO 
                 title={post.metaTitle || post.title} 
-                description={post.metaDescription || post.content.substring(0, 150)} 
+                description={post.metaDescription || (post.content ? post.content.substring(0, 150) : '')} 
                 image={post.imageUrl}
              />
 
@@ -117,8 +130,8 @@ export default function PostPage() {
                     )}
 
                     <div 
-                        className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-display prose-a:text-accent hover:prose-a:text-accent/80 prose-img:rounded-xl"
-                        dangerouslySetInnerHTML={{ __html: post.content }}
+                        className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-display prose-a:text-accent hover:prose-a:text-accent/80 prose-img:rounded-xl text-surface/90"
+                        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
                     />
                     
                     <div className="mt-12 pt-8 border-t border-surface/10">
