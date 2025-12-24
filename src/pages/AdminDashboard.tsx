@@ -136,10 +136,21 @@ export default function AdminDashboard() {
 
   const filteredPosts = useMemo(() => {
     const nonTrashed = posts.filter(p => p.status !== 'trashed');
-    if (statusFilter === 'all') return nonTrashed;
-    return nonTrashed.filter(p => p.status === statusFilter)
-      .filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()))
-      .filter(p => selectedTags.length === 0 || selectedTags.every(tag => p.tags?.includes(tag)));
+    let filtered = nonTrashed;
+    
+    if (statusFilter !== 'all') {
+        filtered = filtered.filter(p => p.status === statusFilter);
+    }
+    
+    if (searchTerm) {
+        filtered = filtered.filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    
+    if (selectedTags.length > 0) {
+        filtered = filtered.filter(p => selectedTags.every(tag => p.tags?.includes(tag)));
+    }
+    
+    return filtered;
   }, [posts, statusFilter, searchTerm, selectedTags]);
   
   if (loading || (dataLoading && canAccess)) {
@@ -224,17 +235,21 @@ export default function AdminDashboard() {
             )}
             
             <div className="bg-surface/5 rounded-lg overflow-hidden border border-surface/10">
-                <div className="flex items-center px-4 py-3 font-bold bg-surface/10 text-xs uppercase tracking-wider text-surface/70">
-                    <div className="flex-grow">Title</div>
-                    <div className="w-20 text-center hidden sm:block">Status</div>
-                    <div className="w-24 text-center hidden md:block">Created</div>
-                    <div className="w-24 text-center hidden lg:block">Published</div>
-                    <div className="w-24 text-center hidden xl:block">Updated</div>
-                    <div className="w-24 text-center">Actions</div>
+                {/* Table Header */}
+                <div className="flex items-center px-4 py-3 font-bold bg-surface/10 text-[10px] uppercase tracking-widest text-surface/50 border-b border-surface/10">
+                    <div className="flex-grow min-w-0">Title</div>
+                    <div className="w-[100px] text-center hidden sm:block shrink-0">Status</div>
+                    <div className="w-[100px] text-center hidden md:block shrink-0">Created</div>
+                    <div className="w-[100px] text-center hidden lg:block shrink-0">Published</div>
+                    <div className="w-[100px] text-center hidden xl:block shrink-0">Updated</div>
+                    <div className="w-[100px] text-right shrink-0">Actions</div>
                 </div>
+                
+                {/* Table Body */}
                 <div className="divide-y divide-surface/10">
                   {filteredPosts.length > 0 ? filteredPosts.map(post => (
                     <div key={post.id} className="flex items-center px-4 py-4 group hover:bg-surface/5 transition-colors">
+                      {/* Title Column */}
                       <div className="flex-grow min-w-0 pr-4">
                         <p className="font-medium text-surface truncate group-hover:text-accent transition-colors">{post.title}</p>
                         {/* Mobile-only status indicator */}
@@ -243,33 +258,36 @@ export default function AdminDashboard() {
                                 'w-2 h-2 rounded-full',
                                 post.status === 'published' ? 'bg-green-400' : 'bg-yellow-400'
                              )} />
-                             <span className="text-xs text-surface/50 capitalize">{post.status}</span>
+                             <span className="text-[10px] text-surface/50 capitalize font-medium">{post.status}</span>
                         </div>
                       </div>
                       
-                      <div className="w-20 text-center hidden sm:block">
+                      {/* Status Column */}
+                      <div className="w-[100px] flex justify-center hidden sm:flex shrink-0">
                          <span className={cn(
-                           'px-2 py-1 text-[10px] uppercase tracking-wider rounded-full font-bold',
-                           post.status === 'published' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                           'px-2 py-0.5 text-[9px] uppercase tracking-tighter rounded-full font-bold border whitespace-nowrap',
+                           post.status === 'published' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
                          )}>{post.status}</span>
                       </div>
                       
-                      <div className="w-24 text-center text-xs text-surface/60 hidden md:block font-mono">
+                      {/* Date Columns */}
+                      <div className="w-[100px] text-center text-[11px] text-surface/60 hidden md:block shrink-0 font-mono">
                         {post.createdAt?.seconds ? new Date(post.createdAt.seconds * 1000).toLocaleDateString() : '-'}
                       </div>
-                      <div className="w-24 text-center text-xs text-surface/60 hidden lg:block font-mono">
+                      <div className="w-[100px] text-center text-[11px] text-surface/60 hidden lg:block shrink-0 font-mono">
                         {post.publishedAt?.seconds ? new Date(post.publishedAt.seconds * 1000).toLocaleDateString() : '-'}
                       </div>
-                      <div className="w-24 text-center text-xs text-surface/60 hidden xl:block font-mono">
+                      <div className="w-[100px] text-center text-[11px] text-surface/60 hidden xl:block shrink-0 font-mono">
                         {post.updatedAt?.seconds ? new Date(post.updatedAt.seconds * 1000).toLocaleDateString() : '-'}
                       </div>
                       
-                      <div className="w-24 flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditPost(post)} className="h-8 w-8 hover:bg-surface/20"><Edit2 size={16} /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleTrashPost(post.id)} className="h-8 w-8 text-red-400/70 hover:text-red-400 hover:bg-red-400/10"><Trash2 size={16} /></Button>
+                      {/* Actions Column */}
+                      <div className="w-[100px] flex justify-end gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditPost(post)} className="h-8 w-8 hover:bg-surface/20 rounded-lg"><Edit2 size={14} /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleTrashPost(post.id)} className="h-8 w-8 text-red-400/70 hover:text-red-400 hover:bg-red-400/10 rounded-lg"><Trash2 size={14} /></Button>
                       </div>
                     </div>
-                  )) : <div className="p-8 text-center text-surface/50">No posts match your criteria.</div>}
+                  )) : <div className="p-12 text-center text-surface/30 text-sm">No posts match your criteria.</div>}
                 </div>
             </div>
           </div>
