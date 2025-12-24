@@ -1,9 +1,11 @@
 
 import { useState, useEffect } from 'react';
 import { collection, addDoc, serverTimestamp, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
-import SymptomChart from '../components/journal/SymptomChart';
-import TiptapEditor from '../components/TiptapEditor';
+import { db } from '../lib/firebase';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import { Toolbar } from '../components/editor/Toolbar';
 import { Button, Input } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 
@@ -60,6 +62,26 @@ export default function JournalPage() {
     }
   };
   
+  const editor = useEditor({
+      extensions: [StarterKit, Underline],
+      content: content,
+      onUpdate: ({ editor }) => {
+          setContent(editor.getHTML());
+      },
+      editorProps: {
+          attributes: {
+              class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl m-5 focus:outline-none min-h-[150px]',
+          },
+      },
+  });
+
+  // Keep editor content in sync with state when state is updated externally (e.g. after save)
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+        editor.commands.setContent(content);
+    }
+  }, [content, editor]);
+
   const allSymptoms = [...new Set(entries.flatMap(entry => entry.symptoms || []))];
 
   const filteredEntries = entries.filter(entry =>
@@ -83,8 +105,11 @@ export default function JournalPage() {
                 className="w-full bg-gray-700 text-white border-gray-600"
               />
             </div>
-            <div className="mb-4">
-              <TiptapEditor value={content} onChange={setContent} />
+            <div className="mb-4 border border-gray-600 rounded-md bg-gray-700">
+               {editor && <Toolbar editor={editor} />}
+               <div className="p-2">
+                <EditorContent editor={editor} />
+               </div>
             </div>
             <div className="mb-6">
               <Input
@@ -108,12 +133,10 @@ export default function JournalPage() {
           <div className="bg-gray-800 rounded-lg p-6 shadow-lg">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-white">Past Entries</h2>
-              <Button variant="outline" size="sm" onClick={() => { /* Logic to show chart */ }}>
-                Show Chart
-              </Button>
             </div>
             <div className="mb-4">
               <Input
+                label="Search entries"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search entries..."
@@ -122,6 +145,7 @@ export default function JournalPage() {
             </div>
             <div className="mb-4">
               <select
+                aria-label="Filter by symptom"
                 value={selectedSymptom || ''}
                 onChange={(e) => setSelectedSymptom(e.target.value || null)}
                 className="w-full bg-gray-700 text-white border-gray-600 rounded p-2"
@@ -150,10 +174,6 @@ export default function JournalPage() {
                 <p className="text-gray-400 text-center">No entries found. Try adjusting your search or filter.</p>
               )}
             </div>
-          </div>
-          
-          <div className="bg-gray-800 rounded-lg p-6 shadow-lg mt-8">
-             <SymptomChart />
           </div>
         </div>
       </div>

@@ -18,6 +18,8 @@ const PostListPage = lazy(() => import('./pages/PostListPage'));
 const PostPage = lazy(() => import('./pages/PostPage'));
 const JournalPage = lazy(() => import('./pages/JournalPage'));
 const Trash = lazy(() => import('./pages/Trash'));
+const Posts = lazy(() => import('./pages/admin/Posts'));
+const AdminSetup = lazy(() => import('./pages/AdminSetup'));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -78,7 +80,11 @@ const AppContent = () => {
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/posts" element={<AdminRoute><Posts /></AdminRoute>} />
             <Route path="/admin/trash" element={<AdminRoute><Trash /></AdminRoute>} />
+            
+            {/* Setup Route - Temporary */}
+            <Route path="/setup-admin" element={<AdminSetup />} />
           </Routes>
         </Suspense>
       </main>

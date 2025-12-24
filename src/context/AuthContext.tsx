@@ -1,11 +1,13 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { 
   onAuthStateChanged, 
   signOut as firebaseSignOut
 } from 'firebase/auth';
-import { auth, db } from '../firebase';
+import { auth, db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { AuthContext } from './authContextTypes';
+import type { AuthContextType } from './authContextTypes';
 
 interface UserData {
   uid: string;
@@ -15,16 +17,6 @@ interface UserData {
   photoURL?: string;
 }
 
-export interface AuthContextType {
-  user: UserData | null;
-  loading: boolean;
-  logout: () => Promise<void>;
-  isAdmin: boolean;
-  isModerator: boolean;
-}
-
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser: User | null) => {
       if (authUser) {
+        console.log("Auth user found:", authUser.uid);
         try {
           const userDocRef = doc(db, 'users', authUser.uid);
           const userDoc = await getDoc(userDocRef);
@@ -40,29 +33,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (userDoc.exists()) {
             const data = userDoc.data();
+            console.log("Firestore user data:", data);
             role = data.role || 'user';
           } else {
             console.warn("User authenticated but no Firestore profile found. Defaulting to 'user'.");
           }
 
-          setUser({
+          const userData = {
             uid: authUser.uid,
             email: authUser.email,
             role,
             displayName: authUser.displayName || '',
             photoURL: authUser.photoURL || ''
-          });
+          };
+          console.log("Setting user state:", userData);
+          setUser(userData);
         } catch (error) {
           console.error("Error fetching user profile:", error);
           setUser({
             uid: authUser.uid,
             email: authUser.email,
-            role: 'user',
+            role: 'user', // Fallback
             displayName: authUser.displayName || '',
             photoURL: authUser.photoURL || ''
           });
         }
       } else {
+        console.log("No auth user found");
         setUser(null);
       }
       setLoading(false);
@@ -75,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await firebaseSignOut(auth);
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
     loading,
     logout,

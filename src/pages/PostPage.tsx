@@ -1,158 +1,136 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { db } from '../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import DOMPurify from 'dompurify';
-import { format } from 'date-fns';
-import { Button, GlassPanel } from '../components/ui';
-import { ArrowLeft, Clock, User as UserIcon, Calendar, Tag } from 'lucide-react';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/atom-one-dark.css';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { calculateReadTime } from '../utils/readTime';
 import CommentSection from '../components/CommentSection';
 import { ShareButtons } from '../components/ShareButtons';
+import SEO from '../components/SEO';
+import { ArrowLeft, Calendar, Clock, Tag, Loader2 } from 'lucide-react';
+import { Button } from '../components/ui';
 
-// Define the Post interface
 interface Post {
-  id: string;
-  title: string;
-  content: string;
-  authorName?: string;
-  slug?: string;
-  createdAt?: any;
-  tags?: string[];
-  readTime?: number;
-  imageUrl?: string;
-  metaDescription?: string;
+    id: string;
+    title: string;
+    content: string;
+    createdAt: any;
+    authorName?: string;
+    tags?: string[];
+    readTime?: number;
+    imageUrl?: string;
+    metaTitle?: string;
+    metaDescription?: string;
+    slug?: string;
 }
 
 export default function PostPage() {
-  const { slug } = useParams<{ slug: string }>();
-  const [post, setPost] = useState<Post | null>(null);
-  const [loading, setLoading] = useState(true);
-  const contentRef = useRef<HTMLDivElement>(null);
+    const { slug } = useParams<{ slug: string }>();
+    const [post, setPost] = useState<Post | null>(null);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPost = async () => {
-      if (!slug) return;
-      setLoading(true);
-      try {
-        const postsRef = collection(db, 'posts');
-        const q = query(postsRef, where("slug", "==", slug), where("status", "==", "published"));
-        const querySnapshot = await getDocs(q);
+    useEffect(() => {
+        const fetchPost = async () => {
+            if (!slug) return;
+            setLoading(true);
+            try {
+                // Try finding by slug first
+                const q = query(collection(db, 'posts'), where('slug', '==', slug));
+                const querySnapshot = await getDocs(q);
 
-        if (!querySnapshot.empty) {
-          const postSnap = querySnapshot.docs[0];
-          const postData = { id: postSnap.id, ...postSnap.data() } as Post;
-          setPost(postData);
-          
-          document.title = postData.title;
-          if (postData.metaDescription) {
-            const metaDescTag = document.querySelector('meta[name="description"]');
-            if (metaDescTag) {
-              metaDescTag.setAttribute('content', postData.metaDescription);
-            } else {
-              const newMetaTag = document.createElement('meta');
-              newMetaTag.name = "description";
-              newMetaTag.content = postData.metaDescription;
-              document.head.appendChild(newMetaTag);
+                if (!querySnapshot.empty) {
+                    const docData = querySnapshot.docs[0].data();
+                    setPost({ id: querySnapshot.docs[0].id, ...docData } as Post);
+                } else {
+                    // Fallback: Try ID if slug lookup failed (legacy support or direct ID access)
+                    const docRef = doc(db, 'posts', slug);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                         setPost({ id: docSnap.id, ...docSnap.data() } as Post);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching post:", error);
+            } finally {
+                setLoading(false);
             }
-          }
+        };
 
-        } else {
-          console.log('No such document!');
-        }
-      } catch (error) {
-        console.error("Error fetching post:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+        fetchPost();
+    }, [slug]);
 
-    fetchPost();
-  }, [slug]);
-
-  useEffect(() => {
-    if (post?.content && contentRef.current) {
-      const sanitizedContent = DOMPurify.sanitize(post.content, { USE_PROFILES: { html: true } });
-      contentRef.current.innerHTML = sanitizedContent;
-      contentRef.current.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightElement(block as HTMLElement);
-      });
-    }
-  }, [post]);
-
-  if (loading) {
-    return <div className="text-center p-8 text-text">Loading post...</div>;
-  }
-
-  if (!post) {
-    return (
-      <div className="text-center p-8">
-        <h2 className="text-2xl font-bold mb-4 text-text">Post not found</h2>
-        <Link to="/"><Button variant="primary">Back to Home</Button></Link>
-      </div>
+    if (loading) return <div className="flex justify-center items-center h-[50vh]"><Loader2 className="animate-spin text-accent" size={40} /></div>;
+    
+    if (!post) return (
+        <div className="container mx-auto px-4 py-12 text-center">
+             <h1 className="text-2xl font-bold mb-4">Post not found</h1>
+             <Link to="/posts"><Button>Back to Posts</Button></Link>
+        </div>
     );
-  }
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-12">
-        <article>
-            <header className="mb-8">
-                <Link to="/posts" className="inline-flex items-center gap-2 text-accent mb-4 hover:underline">
-                    <ArrowLeft size={16} />
-                    Back to all articles
-                </Link>
-                
-                <h1 className="text-4xl md:text-5xl font-extrabold text-text leading-tight mb-3">{post.title}</h1>
-                
-                {post.readTime && (
-                    <div className="flex items-center gap-2 text-muted text-sm mt-4">
-                        <Clock size={16} />
-                        <span>{post.readTime} min read</span>
-                    </div>
+    return (
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+             <SEO 
+                title={post.metaTitle || post.title} 
+                description={post.metaDescription || post.content.substring(0, 150)} 
+                image={post.imageUrl}
+             />
+
+            <Link to="/posts" className="inline-flex items-center text-accent hover:text-accent/80 mb-6 transition-colors">
+                <ArrowLeft size={20} className="mr-2" /> Back to Posts
+            </Link>
+
+            <article className="bg-surface/5 rounded-2xl overflow-hidden border border-surface/10 shadow-lg">
+                {post.imageUrl && (
+                    <img 
+                        src={post.imageUrl} 
+                        alt={post.title} 
+                        className="w-full h-64 md:h-96 object-cover"
+                    />
                 )}
-            </header>
-
-            <GlassPanel className="p-12">
-                <div className="flex items-center justify-between text-muted border-b border-border/10 pb-4 mb-8">
-                    <div className="flex items-center gap-6">
-                      <span className="flex items-center gap-2">
-                        <UserIcon size={18} />
-                        <span className="font-medium text-text">{post.authorName || 'Chiari Voices Admin'}</span>
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <Calendar size={18} />
-                        <span>{post.createdAt?.seconds ? format(new Date(post.createdAt.seconds * 1000), 'MMMM d, yyyy') : 'Unknown Date'}</span>
-                      </span>
+                
+                <div className="p-6 md:p-10">
+                    <div className="flex flex-wrap gap-4 items-center text-sm text-surface/60 mb-6">
+                        {post.createdAt && (
+                             <div className="flex items-center">
+                                <Calendar size={16} className="mr-1" />
+                                {new Date(post.createdAt.toDate()).toLocaleDateString()}
+                            </div>
+                        )}
+                        <div className="flex items-center">
+                            <Clock size={16} className="mr-1" />
+                            {post.readTime || calculateReadTime(post.content)} min read
+                        </div>
                     </div>
+
+                    <h1 className="text-3xl md:text-5xl font-bold mb-6 font-display text-surface leading-tight">
+                        {post.title}
+                    </h1>
+
+                    {post.tags && post.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-8">
+                            {post.tags.map(tag => (
+                                <span key={tag} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent">
+                                    <Tag size={12} className="mr-1" /> {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    <div 
+                        className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-display prose-a:text-accent hover:prose-a:text-accent/80 prose-img:rounded-xl"
+                        dangerouslySetInnerHTML={{ __html: post.content }}
+                    />
                     
-                    <div className="flex items-center gap-2">
-                      <ShareButtons post={post} />
+                    <div className="mt-12 pt-8 border-t border-surface/10">
+                         <h3 className="text-lg font-bold mb-4">Share this post</h3>
+                         <ShareButtons post={post} />
                     </div>
                 </div>
+            </article>
 
-                {post.imageUrl && <img src={post.imageUrl} alt={post.title} className="w-full h-auto object-cover rounded-xl mb-8" />}
-
-                <div 
-                  id="post-content" 
-                  ref={contentRef}
-                  className="prose prose-invert prose-lg max-w-none mx-auto text-text/90 prose-headings:text-text prose-a:text-accent prose-strong:text-text prose-blockquote:border-accent"
-                ></div>
-                
-                {post.tags && post.tags.length > 0 && (
-                    <div className="mt-8 pt-6 border-t border-border/10 flex flex-wrap items-center gap-3">
-                        <span className="font-semibold text-text"><Tag size={16} /></span>
-                        {post.tags.map(tag => (
-                            <Link to={`/posts?tag=${tag}`} key={tag} className="px-3 py-1 text-sm rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition-colors">
-                                {tag}
-                            </Link>
-                        ))}
-                    </div>
-                )}
-            </GlassPanel>
-        </article>
-        
-        <CommentSection postId={post.id} />
-    </div>
-  );
+            <div className="mt-12">
+                <CommentSection postId={post.id} />
+            </div>
+        </div>
+    );
 }

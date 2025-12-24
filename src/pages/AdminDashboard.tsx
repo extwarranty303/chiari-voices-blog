@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { collection, getDocs, query, orderBy, doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import PostEditor from '../components/PostEditor';
 import { Button, Input } from '../components/ui';
@@ -188,6 +188,7 @@ export default function AdminDashboard() {
             <div className="flex gap-4">
                 <div className="relative flex-grow">
                     <Input 
+                        label="Search by title"
                         placeholder="Search by title..." 
                         value={searchTerm} 
                         onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}

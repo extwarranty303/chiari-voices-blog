@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   signInWithEmailAndPassword, 
@@ -10,7 +10,7 @@ import {
   updateProfile,
   type User
 } from 'firebase/auth';
-import { auth, db } from '../firebase';
+import { auth, db } from '../lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Button, Input, GlassPanel } from '../components/ui';
 import { AlertCircle, CheckCircle } from 'lucide-react';
@@ -23,17 +23,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<null | 'google' | 'facebook'>(null);
   const navigate = useNavigate();
-  const mounted = useRef(true);
 
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
+  // Helper to handle redirect based on role
   const handleRoleRedirect = async (user: User) => {
     try {
       const userDocRef = doc(db, 'users', user.uid);
@@ -81,13 +73,9 @@ export default function Login() {
       }
     } catch (err: any) {
       console.error(err);
-      if (mounted.current) {
-        setError(err.message || 'Failed to authenticate');
-      }
+      setError(err.message || 'Failed to authenticate');
     } finally {
-      if (mounted.current) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
   
@@ -101,27 +89,17 @@ export default function Login() {
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      if (mounted.current) {
-        setSuccessMessage('Password reset email sent! Check your inbox.');
-      }
+      setSuccessMessage('Password reset email sent! Check your inbox.');
     } catch (err: any) {
-      if (mounted.current) {
-        setError(err.message || 'Failed to send reset email.');
-      }
+      setError(err.message || 'Failed to send reset email.');
     } finally {
-      if (mounted.current) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
-  const handleSocialLogin = async (providerName: 'google' | 'facebook') => {
+  const handleSocialLogin = async (provider: GoogleAuthProvider | FacebookAuthProvider) => {
     setError('');
     setSuccessMessage('');
-    setSocialLoading(providerName);
-    
-    const provider = providerName === 'google' ? new GoogleAuthProvider() : new FacebookAuthProvider();
-
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
@@ -142,13 +120,7 @@ export default function Login() {
         await handleRoleRedirect(user);
       }
     } catch (err: any) {
-      if (mounted.current) {
-        setError(err.message);
-      }
-    } finally {
-      if (mounted.current) {
-        setSocialLoading(null);
-      }
+      setError(err.message);
     }
   };
 
@@ -175,6 +147,7 @@ export default function Login() {
         <form onSubmit={handleAuth} className="space-y-4">
           {!isLogin && (
             <Input
+              label="Full Name"
               type="text"
               placeholder="Full Name"
               value={name}
@@ -183,6 +156,7 @@ export default function Login() {
             />
           )}
           <Input
+            label="Email Address"
             type="email"
             placeholder="Email Address"
             value={email}
@@ -190,6 +164,7 @@ export default function Login() {
             required
           />
           <Input
+            label="Password"
             type="password"
             placeholder="Password"
             value={password}
@@ -210,7 +185,7 @@ export default function Login() {
             </div>
           )}
           
-          <Button type="submit" className="w-full !mt-6" disabled={loading || socialLoading !== null}>
+          <Button type="submit" className="w-full !mt-6" disabled={loading}>
             {loading ? 'Processing...' : (isLogin ? 'Log In' : 'Sign Up')}
           </Button>
         </form>
@@ -222,21 +197,11 @@ export default function Login() {
         </div>
 
         <div className="space-y-3">
-          <Button 
-            variant="secondary" 
-            className="w-full" 
-            onClick={() => handleSocialLogin('google')}
-            disabled={loading || socialLoading !== null}
-          >
-            {socialLoading === 'google' ? 'Processing...' : 'Continue with Google'}
+          <Button variant="secondary" className="w-full" onClick={() => handleSocialLogin(new GoogleAuthProvider())}>
+            Continue with Google
           </Button>
-          <Button 
-            variant="secondary" 
-            className="w-full" 
-            onClick={() => handleSocialLogin('facebook')}
-            disabled={loading || socialLoading !== null}
-          >
-            {socialLoading === 'facebook' ? 'Processing...' : 'Continue with Facebook'}
+          <Button variant="secondary" className="w-full" onClick={() => handleSocialLogin(new FacebookAuthProvider())}>
+            Continue with Facebook
           </Button>
         </div>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, Textarea } from './ui';
 import { useAuth } from '../context/AuthContext';
+import type { ChangeEvent, FormEvent } from 'react';
 
 interface CommentInputProps {
   onSubmit: (text: string) => Promise<void>;
@@ -14,7 +15,7 @@ export default function CommentInput({ onSubmit, initialText = '', buttonText = 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !user) return;
     setIsSubmitting(true);
@@ -31,8 +32,9 @@ export default function CommentInput({ onSubmit, initialText = '', buttonText = 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Textarea 
+            label="Write a comment"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
             placeholder="Write a comment..."
             required
             rows={3}

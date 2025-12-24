@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { collection, query, getDocs, orderBy, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import CommentInput from './CommentInput';
 import { ArrowUp, ArrowDown, MessageSquare } from 'lucide-react';
@@ -28,7 +28,7 @@ const Comment = ({ comment, onReply, onVote }: { comment: Comment, onReply: (id:
     const { user } = useAuth();
 
     return (
-        <div className="flex gap-3 my-4">
+        <div className="flex gap-3 my-4" key={comment.id}>
             <img src={comment.authorPhotoURL || '/default-avatar.png'} alt={comment.authorName} className="w-8 h-8 rounded-full mt-1" />
             <div className="flex-grow">
                 <div className="flex items-center gap-2">
@@ -89,7 +89,9 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   }, [postId]);
 
   useEffect(() => {
-    fetchComments();
+    (async () => {
+        await fetchComments();
+    })();
   }, [fetchComments]);
 
   const handlePostComment = useCallback(async (text: string, parentId: string | null = null) => {
