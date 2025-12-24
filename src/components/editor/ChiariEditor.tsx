@@ -3,7 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { Toolbar } from './Toolbar';
 import Underline from '@tiptap/extension-underline';
 import Image from '@tiptap/extension-image';
-import TextStyle from '@tiptap/extension-text-style';
+import { TextStyle } from '@tiptap/extension-text-style';
 import { FontSize } from './FontSize';
 import React, { useEffect, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';

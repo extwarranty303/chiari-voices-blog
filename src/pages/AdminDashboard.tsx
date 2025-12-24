@@ -15,6 +15,8 @@ interface Post {
   content: string;
   status: 'draft' | 'published' | 'trashed';
   createdAt: Timestamp;
+  updatedAt?: Timestamp;
+  publishedAt?: Timestamp;
   tags?: string[];
 }
 
@@ -228,6 +230,9 @@ export default function AdminDashboard() {
                 <div className="flex items-center px-4 py-2 font-bold bg-surface/10 text-sm text-surface/80">
                     <div className="flex-grow">Title</div>
                     <div className="w-28 text-center">Status</div>
+                    <div className="w-28 text-center">Created</div>
+                    <div className="w-28 text-center">Published</div>
+                    <div className="w-28 text-center">Updated</div>
                     <div className="w-32 text-center">Actions</div>
                 </div>
                 <div className="divide-y divide-surface/10">
@@ -241,6 +246,15 @@ export default function AdminDashboard() {
                            'px-2 py-1 text-xs rounded-full font-medium',
                            post.status === 'published' ? 'bg-green-400/10 text-green-300' : 'bg-yellow-400/10 text-yellow-300'
                          )}>{post.status}</span>
+                      </div>
+                      <div className="w-28 text-center text-xs text-surface/60">
+                        {post.createdAt?.seconds ? new Date(post.createdAt.seconds * 1000).toLocaleDateString() : '-'}
+                      </div>
+                      <div className="w-28 text-center text-xs text-surface/60">
+                        {post.publishedAt?.seconds ? new Date(post.publishedAt.seconds * 1000).toLocaleDateString() : '-'}
+                      </div>
+                      <div className="w-28 text-center text-xs text-surface/60">
+                        {post.updatedAt?.seconds ? new Date(post.updatedAt.seconds * 1000).toLocaleDateString() : '-'}
                       </div>
                       <div className="w-32 flex justify-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => handleEditPost(post)} className="h-8 w-8"><Edit2 size={16} /></Button>
