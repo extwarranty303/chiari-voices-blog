@@ -1,13 +1,13 @@
 
 import { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
+import { collection, query, where, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 
 interface JournalEntry {
   id: string;
   symptoms?: string[];
-  createdAt: any;
+  createdAt: Timestamp;
 }
 
 interface ChartData {
@@ -29,7 +29,9 @@ export const useSymptomData = () => {
 
   useEffect(() => {
     if (!user) {
-      setLoading(false);
+        (async () => {
+            setLoading(false);
+        })();
       return;
     }
 

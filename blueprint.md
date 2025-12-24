@@ -1,103 +1,127 @@
-# Chiari Voices - AI-Powered Blog Platform
+
+# Project Blueprint: Advanced Blog CMS & Tiptap Editor
 
 ## 1. Overview
 
-This document outlines the plan for building a comprehensive, AI-powered blog platform for the Chiari malformation community. The platform will provide a space for creating, managing, and reading content, with a rich feature set powered by Firebase and Google AI (Gemini 3 Pro via Genkit). The user experience will be consistent with the look, feel, and color scheme of `chiarivoices.org`.
+This document outlines the architecture and implementation plan for building a custom, feature-rich WYSIWYG editor and a fully functional Admin Blog Content Management System (CMS). The primary goal is to provide a seamless and powerful content creation experience with a special focus on accessibility and audience-specific needs for the Chiari Malformation community.
 
----
+## 2. Core Technologies
 
-## 2. Core Architecture & Technology Stack
+- **Frontend:** React (Vite), TypeScript, Tailwind CSS
+- **Editor Core:** Tiptap (Headless WYSIWYG)
+- **Backend & Storage:** Firebase (Firestore, Firebase Storage)
+- **Document Parsing:** `mammoth.js` (.docx), `pdfjs-dist` (PDF)
+- **State Management:** Zustand
+- **UI & Icons:** `lucide-react`
+- **Security:** `dompurify`
 
-*   **Frontend:** React with Vite (TypeScript)
-*   **Backend:** Firebase (Authentication, Cloud Firestore, Cloud Storage, Cloud Functions)
-*   **AI Integration:** Genkit for complex server-side AI workflows, and Firebase AI Logic for optional client-side tasks.
-*   **AI Model:** Gemini 3 Pro
-*   **Styling:** Tailwind CSS
-*   **Component Library:** Shadcn/ui (for maximum control and a clean, dependency-light approach)
+## 3. Architecture Diagram
 
----
+```mermaid
+graph TD
+    A[Admin User] --> B{Admin Dashboard};
+    B --> C[Post List View];
+    B --> D[Post Editor];
 
-## 3. Design and User Experience (UX)
+    subgraph Post Editor
+        D --> E[Tiptap WYSIWYG Editor];
+        D --> F[SEO & Metadata Fields];
+        D --> G[Document Importer];
+    end
 
-*   **Color Scheme:** The palette will be sampled from `chiarivoices.org` to ensure brand consistency, focusing on its dark theme with purple and teal accents.
-*   **Layout:** A clean, modern, and responsive layout that works seamlessly on all devices.
-*   **Visual Style:** **Glassmorphism** will be used for key UI elements to create a sense of depth and transparency.
-*   **Typography:**
-    *   **Body:** `Inter` (sans-serif) for readability.
-    *   **Headlines:** `Space Grotesk` (sans-serif) for a bold, technical feel.
-*   **Iconography:** Clear, minimalist icons will be used for navigation and interactive elements.
-*   **Animation:** Subtle animations will provide feedback for loading states and user interactions.
-*   **Header & Footer:** Will be designed to match `chiarivoices.org`.
+    subgraph Tiptap Core
+        E --> H[Custom Toolbar];
+        E --> I[Floating Menu];
+        E --> J[Image Upload Extension];
+    end
 
----
+    J -- Uploads to --> K[Firebase Storage];
+    K -- Returns URL --> J;
+    J -- Inserts Image URL --> E;
 
-## 4. Key Features & Implementation Plan
+    G -- Imports .docx/.pdf --> L[Parser Utilities];
+    L -- Uses mammoth.js & pdfjs-dist --> M[Sanitized HTML];
+    M -- Purified by DOMPurify --> E;
 
-### Phase 1: Foundation & Authentication
+    D -- Save/Publish --> N[Firestore Database];
 
-*   [x] **Firebase Project Setup:** Create a new Firebase project and connect it to this workspace.
-*   [x] **Core Services:** Initialize Firebase Authentication, Cloud Firestore, and Cloud Storage.
-*   [x] **Styling Foundation:** Configure Tailwind CSS with the `chiarivoices.org` color palette, fonts, and Glassmorphism styles.
-*   [x] **Login Page:**
-    *   Create a dedicated, responsive login page.
-    *   Implement authentication via Email/Password, Google, and Facebook.
-    *   Implement a password reset flow for email-based accounts.
-*   [x] **User Roles & Security:**
-    *   Define three user roles: `admin`, `moderator`, and `user`.
-    *   Set up Firestore Security Rules to enforce permissions based on these roles.
-    *   Store user data and roles in a `users` collection in Firestore.
+    subgraph Public Website
+        O[Public User] --> P[Blog Post Page];
+        P -- Fetches data from --> N;
+    end
+```
 
-### Phase 2: Blog Content Management (Admin/Moderator)
+## 4. Implementation Plan
 
-*   [x] **Admin Dashboard:** Create a secure dashboard accessible only to `admin` and `moderator` roles.
-*   [x] **Post Creation & Editing:**
-    *   Build a `PostEditor` component.
-    *   Integrate a full-featured WYSIWYG editor with a "Source Code" view.
-    *   Enable fields for `title`, `content` (HTML), and `tags`.
-*   [x] **Media Handling:**
-    *   Allow image and video uploads directly to Cloud Storage.
-    *   Allow embedding media via URL.
-*   [x] **Post Management:**
-    *   Create a view to list all posts (CRUD operations).
-    *   Admins have full CRUD access.
-    *   Moderators have Create, Update, and Delete permissions.
+### Phase 1: Setup & Core Editor
 
-### Phase 3: Public Blog & User Features
+- [x] **1. Install Dependencies:**
+  - Tiptap: `@tiptap/react @tiptap/starter-kit @tiptap/extension-image @tiptap/extension-link @tiptap/extension-placeholder @tiptap/extension-underline`
+  - Parsing: `mammoth pdfjs-dist`
+  - Utilities: `lucide-react dompurify reading-time`
 
-*   [x] **Blog Post Display:**
-    *   Create a main blog page to list all published posts.
-    *   Create a single post page (`/posts/:slug`) to display full content.
-*   [x] **Nested Comments:** Implement a Reddit-like nested commenting system on post pages.
-*   [x] **User Profile Page:**
-    *   Create a private, user-only profile page.
-    *   Allow users to update their profile picture, location, and other data.
-    *   Implement a feature to bookmark favorite articles, storing them in the user's profile data.
+- [x] **2. Firebase Setup & Security:**
+  - Create `firebase.ts` config file.
+  - Implement Firestore security rules to restrict write access to the `posts` collection to admins.
 
-### Phase 4: Future AI Feature Integration (Genkit & Gemini 3 Pro)
+- [x] **3. Basic Editor Component (`/components/editor/TiptapEditor.tsx`):**
+  - Initialize Tiptap with `StarterKit`, `Placeholder`, and `Underline` extensions.
+  - Create a `Toolbar.tsx` with controls for Bold, Italic, Underline, Strike, Code, Lists, and Headers (H1-H3).
+  - Implement a `FloatingMenu.tsx` for quick inline formatting.
 
-*   [ ] **Genkit Setup:** Initialize Genkit within a Cloud Functions environment.
-*   [ ] **Content Assistance (Generate & Refine):**
-    *   **UI:** Add an "AI Assistant" section to the `PostEditor`.
-    *   **Genkit Flow:** Create a flow that accepts a topic/keywords and generates:
-        *   Blog post ideas
-        *   Outlines
-        *   Initial drafts
-*   [ ] **SEO & Summarization:**
-    *   **UI:** Add "Generate SEO" and "Generate Summary" buttons to the editor.
-    *   **Genkit Flow (`generateSeoKeywordsFlow`):** Create a flow to analyze post content and generate:
-        *   SEO keywords.
-        *   A meta description.
-    *   **AI Summary:** Implement a feature to generate a concise summary of long posts.
-*   [ ] **AI-Powered Tagging:**
-    *   **UI:** Show AI-suggested tags in the editor.
-    *   **Genkit Flow:** Create a flow to suggest relevant tags based on post content.
-*   [ ] **AI Image Generation:**
-    *   **UI:** Add a feature to generate an image from a text prompt.
-    *   **Genkit/AI Logic Flow:** Create a flow to call the Gemini model for image generation and save it to Cloud Storage.
-*   [ ] **AI Comment Moderation:**
-    *   **Cloud Function Trigger:** On comment creation, trigger a a function.
-    *   **Genkit Flow:** Create a flow that analyzes comment text for spam or offensive language and flags it for moderator review.
-*   [ ] **Advanced AI Features (Future):**
-    *   [ ] **Content Outdatedness Detector:** AI tool to flag posts that may need updates.
-    *   [|] **Personalized Recommendations:** AI to suggest articles to readers.
-    *   [ ] **Accessibility:** AI-powered video transcription and text-to-speech.
+### Phase 2: Advanced Editor Features
+
+- [x] **4. Custom Image Handling:**
+  - Create a custom Tiptap Image extension.
+  - On image drop/paste, upload the file to Firebase Storage.
+  - On successful upload, insert the image into the editor with `src` pointing to the Firebase Storage URL.
+  - Add UI for alt text and resizing.
+
+- [x] **5. Link Tool:**
+  - Enhance the link insertion UI to include a "nofollow" toggle.
+
+- [x] **6. Document Importer (`/components/editor/DocumentImporter.tsx`):**
+  - Create the UI for file selection.
+  - Implement parser functions in a `lib/parsers.ts` utility file.
+    - **Word (.docx):** Use `mammoth.js` to convert to clean HTML.
+    - **PDF:** Use `pdfjs-dist` to extract text content.
+  - Sanitize all imported HTML with `DOMPurify` before inserting it into the editor.
+
+- [x] **7. Code Block:**
+    - Add a `CodeBlockLowlight` extension with language selection and a copy button.
+
+### Phase 3: CMS & Admin Dashboard
+
+- [ ] **8. Update Data Structures (`/types/index.ts`):**
+  - Add fields to the `Post` type for SEO metadata (`metaTitle`, `metaDescription`) and reading time.
+
+- [ ] **9. Create New Admin Pages:**
+  - `PostManager.tsx`: The main list view for all posts, showing status, and providing Edit/Delete actions.
+  - `PostForm.tsx`: The form for creating/editing a post. This will house the `TiptapEditor` and other metadata fields.
+
+- [ ] **10. CMS Workflow & State:**
+  - Use a Zustand store (`editorStore.ts`) to manage editor state.
+  - **Auto-save:** Implement a `useAutosave` hook that periodically saves the draft to Firestore.
+  - **Preview Mode:** Add a toggle to `PostForm.tsx` to render the content in a read-only, styled view.
+  - **Publishing:** Add validation to the "Publish" button to ensure required fields are filled.
+  - **Reading Time:** Calculate and display reading time using the `reading-time` package.
+
+### Phase 4: Audience-Specific Features & Final Polish
+
+- [ ] **11. Accessibility & UX Enhancements:**
+  - **Dark Mode:** Implement a dark mode for the editor UI.
+  - **Readability Score:** If feasible, integrate a library to calculate a Flesch-Kincaid score.
+  - Ensure all editor controls are keyboard accessible and have proper ARIA labels.
+
+- [ ] **12. Refactor and Integrate:**
+  - Replace the old `PostEditor.tsx` with the new `PostForm.tsx` in the admin routes.
+  - Ensure the entire workflow from creating a post to viewing it on the public site is seamless.
+  - Update `blueprint.md` to reflect completed tasks.
+
+### Phase 5: Editor Showcase
+
+- [x] **13. Create Editor Page (`/pages/EditorPage.tsx`):**
+    - Create a new page to display the Tiptap editor.
+    - Add a "Save" button to download the content as an HTML file.
+- [x] **14. Add Editor Route:**
+    - Add a new route in `App.tsx` to render the `EditorPage`.

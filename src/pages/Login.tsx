@@ -10,7 +10,7 @@ import {
   updateProfile,
   type User
 } from 'firebase/auth';
-import { auth, db } from '../firebase';
+import { auth, db } from '../lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Button, Input, GlassPanel } from '../components/ui';
 import { AlertCircle, CheckCircle } from 'lucide-react';
@@ -147,6 +147,7 @@ export default function Login() {
         <form onSubmit={handleAuth} className="space-y-4">
           {!isLogin && (
             <Input
+              label="Full Name"
               type="text"
               placeholder="Full Name"
               value={name}
@@ -155,6 +156,7 @@ export default function Login() {
             />
           )}
           <Input
+            label="Email Address"
             type="email"
             placeholder="Email Address"
             value={email}
@@ -162,6 +164,7 @@ export default function Login() {
             required
           />
           <Input
+            label="Password"
             type="password"
             placeholder="Password"
             value={password}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { GlassPanel } from '../components/ui';
@@ -43,18 +43,21 @@ export default function PostListPage() {
       setLoading(true);
       setError(null);
       try {
+        console.log("Fetching posts...");
         const q = query(
           collection(db, 'posts'), 
           where('status', '==', 'published'),
           orderBy('createdAt', 'desc')
         );
         const querySnapshot = await getDocs(q);
+        console.log("Snapshot size:", querySnapshot.size);
+        
         const fetchedPosts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const sanitized = sanitizePosts(fetchedPosts);
         setPosts(sanitized);
       } catch (err: any) {
-        console.error("Firebase Error:", err);
-        setError("Failed to fetch posts. Please ensure Firestore indexes are configured correctly.");
+        console.error("Firebase Error in PostListPage:", err);
+        setError(`Failed to fetch posts: ${err.message}`);
         setPosts([]);
       } finally {
         setLoading(false);
@@ -133,7 +136,10 @@ export default function PostListPage() {
           {[...Array(6)].map((_, i) => <div key={i} className="h-96 glass-panel rounded-lg" />)}
         </div>
       ) : error ? (
-        <div className="text-center py-20 text-destructive"><p>{error}</p></div>
+        <div className="text-center py-20 text-destructive border border-red-500/20 bg-red-500/10 rounded-lg p-4">
+            <p className="font-bold">Error loading posts</p>
+            <p className="text-sm mt-2">{error}</p>
+        </div>
       ) : filteredPosts.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredPosts.map(post => (

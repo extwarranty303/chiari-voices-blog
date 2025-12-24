@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { db, storage, auth } from '../firebase';
+import { db, storage, auth } from '../lib/firebase';
 import { doc, updateDoc, getDoc, collection, getDocs, where, query, documentId } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateProfile } from 'firebase/auth';

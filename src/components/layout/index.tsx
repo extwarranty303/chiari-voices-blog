@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User as UserIcon, ExternalLink } from 'lucide-react';
-import { Button, GlassPanel, Dropdown, DropdownItem } from '../ui';
+import { Button, GlassPanel } from '../ui';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/Dropdown';
 import { useAuth } from '../../context/AuthContext';
 
 const UserMenu = () => {
   const { logout } = useAuth();
   return (
-    <Dropdown 
-      trigger={
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <UserIcon size={20} />
         </Button>
-      }
-    >
-      <Link to="/profile"><DropdownItem>Profile</DropdownItem></Link>
-      <Link to="/journal"><DropdownItem>Journal</DropdownItem></Link>
-      <DropdownItem><button onClick={logout}>Log Out</button></DropdownItem>
-    </Dropdown>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <Link to="/profile"><DropdownMenuItem>Profile</DropdownMenuItem></Link>
+        <Link to="/journal"><DropdownMenuItem>Journal</DropdownMenuItem></Link>
+        <DropdownMenuItem onClick={logout}>Log Out</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

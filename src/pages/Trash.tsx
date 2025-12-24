@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { Button } from '../components/ui';
 import { format, subDays } from 'date-fns';

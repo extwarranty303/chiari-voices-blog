@@ -15,7 +15,7 @@ export default function JournalCTA() {
           <p className="text-muted mb-6">
             Our new Journal and Symptom Tracker is a private space designed to help you document your health journey. Log symptoms, record thoughts, and uncover insights that can empower your conversations with healthcare providers.
           </p>
-          <Button asChild size="lg" variant="primary">
+          <Button asChild size="lg" variant="default">
             <Link to="/journal">
               <BookHeart size={20} className="mr-2" />
               Start Your Private Journal
