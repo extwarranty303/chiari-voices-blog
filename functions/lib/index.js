@@ -43,6 +43,7 @@ admin.initializeApp();
 const db = admin.firestore();
 const escapeXml = (unsafe) => {
     if (typeof unsafe !== 'string') {
+        logger.warn('escapeXml was called with a non-string value:', unsafe);
         return '';
     }
     return unsafe.replace(/[<>&'"]/g, (c) => {
@@ -79,9 +80,13 @@ const generateSitemap = async () => {
     // Dynamic post pages
     try {
         const postsSnapshot = await db.collection('posts').where('status', '==', 'published').orderBy('createdAt', 'desc').get();
+        logger.info(`Found ${postsSnapshot.size} published posts.`);
         postsSnapshot.forEach(doc => {
             const post = doc.data();
+            logger.info(`Processing post with id ${doc.id}`);
+            logger.info(`Post data: ${JSON.stringify(post)}`); // Log the entire post object
             if (post && post.slug) {
+                logger.info(`Post ${doc.id} has slug: ${post.slug}`);
                 const postUrl = `/post/${escapeXml(post.slug)}`;
                 const lastMod = post.createdAt?.seconds ? (0, date_fns_1.format)(new Date(post.createdAt.seconds * 1000), 'yyyy-MM-dd') : (0, date_fns_1.format)(new Date(), 'yyyy-MM-dd');
                 addUrl(postUrl, lastMod, 'weekly', '0.9');
@@ -98,9 +103,13 @@ const generateSitemap = async () => {
     try {
         const tagsSnapshot = await db.collection('posts').where('status', '==', 'published').get();
         const tags = new Set();
+        logger.info(`Found ${tagsSnapshot.size} posts to process for tags.`);
         tagsSnapshot.forEach(doc => {
             const post = doc.data();
+            logger.info(`Processing tags for post with id ${doc.id}`);
+            logger.info(`Post data for tags: ${JSON.stringify(post)}`); // Log the entire post object
             if (post && post.tags && Array.isArray(post.tags)) {
+                logger.info(`Post ${doc.id} has tags: ${post.tags.join(', ')}`);
                 post.tags.forEach((tag) => {
                     if (tag) {
                         tags.add(tag);
@@ -131,7 +140,6 @@ exports.sitemap = (0, https_1.onRequest)(async (req, res) => {
 });
 const regenerateSitemap = async () => {
     logger.info("Sitemap regeneration triggered.");
-    // This is a simplified trigger. For a robust solution, consider using Pub/Sub or calling the function via HTTP.
     await generateSitemap();
 };
 exports.onPostChange = (0, firestore_1.onDocumentWritten)("posts/{postId}", (event) => {

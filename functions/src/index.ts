@@ -10,6 +10,7 @@ const db = admin.firestore();
 
 const escapeXml = (unsafe: string) => {
   if (typeof unsafe !== 'string') {
+    logger.warn('escapeXml was called with a non-string value:', unsafe);
     return '';
   }
   return unsafe.replace(/[<>&'"]/g, (c) => {
@@ -25,8 +26,6 @@ const escapeXml = (unsafe: string) => {
 };
 
 const generateSitemap = async () => {
-  logger.info("Sitemap generation requested");
-
   const baseUrl = "https://blog.chiarivoices.org";
 
   let xml = '<?xml version="1.0" encoding="UTF-8"?>';
@@ -104,8 +103,6 @@ export const sitemap = onRequest(async (req, res) => {
 });
 
 const regenerateSitemap = async () => {
-    logger.info("Sitemap regeneration triggered.");
-    // This is a simplified trigger. For a robust solution, consider using Pub/Sub or calling the function via HTTP.
     await generateSitemap();
 };
 
