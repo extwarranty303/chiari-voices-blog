@@ -29,7 +29,7 @@ const PostPreview: React.FC<PostPreviewProps> = ({ postData, onClose }) => {
                     {postData.imageUrl && (
                         <img src={postData.imageUrl} alt={postData.title} className="w-full h-64 object-cover rounded-xl mb-8 shadow-lg" />
                     )}
-                    <article className="prose prose-invert lg:prose-xl mx-auto">
+                    <article className="mx-auto">
                         <h1>{postData.title}</h1>
                         <div className="text-sm text-slate-400 mb-4">
                             <span>{postData.readTime} min read</span>

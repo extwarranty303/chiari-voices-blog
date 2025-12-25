@@ -52,7 +52,7 @@ export default function Home() {
         title="Home"
         description="Chiari Voices: A safe, supportive community blog for sharing stories and finding strength in the face of Chiari Malformation."
       />
-      
+
       <div className="w-screen h-[50vh] relative left-1/2 -translate-x-1/2">
         <img src={heroImageUrl} alt="A vibrant, abstract image of a brain in a forest, representing thought and community" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-center p-4">

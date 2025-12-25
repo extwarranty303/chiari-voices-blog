@@ -21,15 +21,17 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { Input, Textarea, Label } from '../ui';
 import { DocumentImporter } from './DocumentImporter';
-import { uploadImage } from './ImageUpload';
+import { uploadImage } from '../../lib/storage';
 import { CheckCircle2, Eye, X } from 'lucide-react';
 import PostPreview from '../PostPreview';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { createLowlight } from 'lowlight';
+import type { Post } from '../../lib/types';
 
 const lowlight = createLowlight();
 
 interface ChiariEditorProps {
+    post: Post | null;
     content: string;
     setContent: (value: string) => void;
     onSave: () => void;
@@ -55,6 +57,7 @@ interface ChiariEditorProps {
 }
 
 const ChiariEditor: React.FC<ChiariEditorProps> = ({ 
+    post,
     content, setContent, onSave, 
     title, setTitle,
     status, setStatus,
@@ -143,8 +146,13 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
         const file = event.target.files?.[0];
         if (!file || !editor) return;
 
+        if (!post?.id) {
+            alert('Please save the post before uploading an image.');
+            return;
+        }
+
         try {
-            const downloadUrl = await uploadImage(file);
+            const downloadUrl = await uploadImage(file, post.id, event.target.name === 'coverImage' ? 'cover' : 'content');
             if (event.target.name === 'coverImage') {
                 setCoverImage(downloadUrl);
             } else {

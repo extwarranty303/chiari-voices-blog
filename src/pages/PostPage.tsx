@@ -62,7 +62,7 @@ const PostPage: React.FC = () => {
     return (
         <main className="bg-slate-900 text-slate-200 min-h-screen">
             <div className="container mx-auto px-4 py-12">
-                <article className="prose prose-invert lg:prose-xl mx-auto">
+                <article className="mx-auto">
                     {post.imageUrl && (
                         <img src={post.imageUrl} alt={post.title} className="w-full h-auto object-cover rounded-xl mb-8 shadow-lg" />
                     )}

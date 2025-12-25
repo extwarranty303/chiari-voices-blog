@@ -4,16 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Button } from '../../components/ui/Button';
-
-// Define Post locally if types.ts is gone or adjust import
-interface Post {
-  id: string;
-  title: string;
-  slug: string;
-  status: 'draft' | 'published';
-  author: { name: string };
-  createdAt: any;
-}
+import type { Post } from '../../lib/types';
 
 const Posts: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -74,7 +65,7 @@ const Posts: React.FC = () => {
             {posts.map(post => (
               <tr key={post.id}>
                 <td className="px-6 py-4 whitespace-nowrap">{post.title}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{post.author?.name || 'Unknown'}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{post.authorName || 'Unknown'}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -86,7 +77,7 @@ const Posts: React.FC = () => {
                     {post.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">{post.createdAt ? new Date(post.createdAt.toDate()).toLocaleDateString() : 'N/A'}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{post.createdAt ? new Date((post.createdAt as any).toDate()).toLocaleDateString() : 'N/A'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <Button variant="outline" size="sm" onClick={() => navigate(`/admin/posts/editor/${post.slug}`)}>Edit</Button>
                   <Button variant="destructive" size="sm" onClick={() => handleDelete(post.id)} className="ml-2">Delete</Button>

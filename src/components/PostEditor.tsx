@@ -1,46 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, setDoc, updateDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, updateDoc, doc, serverTimestamp, addDoc, FieldValue, Timestamp } from 'firebase/firestore';
 import { Button } from './ui';
 import { X } from "lucide-react";
 import { calculateReadTime } from '../utils/readTime';
 import ChiariEditor from './editor/ChiariEditor';
-import { FieldValue } from 'firebase/firestore';
-
-interface Post {
-    id: string;
-    title: string;
-    content: string;
-    status: 'draft' | 'published' | 'archived';
-    readTime?: number;
-    createdAt: Timestamp | FieldValue;
-    tags?: string[];
-    imageUrl?: string;
-    metaTitle?: string;
-    metaDescription?: string;
-    slug?: string;
-    primaryKeyword?: string;
-    secondaryKeywords?: string[];
-    excerpt?: string;
-    authorId?: string;
-    authorName?: string;
-    updatedAt?: Timestamp | FieldValue;
-    featured?: boolean;
-}
-
-interface PostEditorProps {
-  post: Post | null;
-  onClose: () => void;
-}
+import type { Post } from '../lib/types';
 
 const generateSlug = (title: string) => {
     return title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-');
 };
 
-export default function PostEditor({ post, onClose }: PostEditorProps) {
+interface PostEditorProps {
+  post: Post | null;
+  onClose: () => void;
+  onSave: (savedPost: Post) => void; 
+}
+
+export default function PostEditor({ post, onClose, onSave: onSaveCallback }: PostEditorProps) {
     const { user } = useAuth();
   
+    const [currentPost, setCurrentPost] = useState<Post | null>(post);
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [tags, setTags] = useState<string[]>([]);
@@ -56,6 +37,7 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
 
     useEffect(() => {
         if (post) {
+            setCurrentPost(post);
             setTitle(post.title);
             setContent(post.content || '');
             setTags(post.tags || []);
@@ -69,6 +51,7 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
             setSecondaryKeywords((post.secondaryKeywords || []).join(', '));
         } else {
           // Reset state for new post
+          setCurrentPost(null);
           setTitle('');
           setContent('');
           setTags([]);
@@ -84,41 +67,61 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
     }, [post]);
 
     useEffect(() => {
-        if (title && !post) {
-            (async () => {
-                setSlug(generateSlug(title));
-            })();
+        if (title && !currentPost) {
+            setSlug(generateSlug(title));
         }
-    }, [title, post]);
+    }, [title, currentPost]);
 
     useEffect(() => {
-        (async () => {
-            const time = calculateReadTime(content);
-            setReadTime(time);
-        })();
+        const time = calculateReadTime(content);
+        setReadTime(time);
     }, [content]);
 
     const handleSave = async () => {
-        if (!user || !title.trim()) return alert("Title is required.");
+        if (!user || !title.trim()) {
+            alert("Title is required.");
+            return;
+        }
 
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = content;
         const excerpt = (tempDiv.textContent || '').slice(0, 150) + '...';
 
-        const postData: any = {
+        const postData: Omit<Post, 'id' | 'createdAt' | 'updatedAt'> & { updatedAt: FieldValue } = {
             title, content, excerpt, tags, imageUrl: coverImage, status, readTime,
-            authorId: user.uid, authorName: 'Chiari Voices Admin', updatedAt: serverTimestamp(),
-            metaTitle: metaTitle || title, metaDescription, slug: slug || generateSlug(title),
-            primaryKeyword, secondaryKeywords: secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean),
+            authorId: user.uid, 
+            authorName: user.displayName || 'Chiari Voices Admin', 
+            updatedAt: serverTimestamp(),
+            metaTitle: metaTitle || title, 
+            metaDescription, 
+            slug: slug || generateSlug(title),
+            primaryKeyword, 
+            secondaryKeywords: secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean),
         };
 
         try {
-            if (post) {
-                await updateDoc(doc(db, 'posts', post.id), postData);
+            let savedPostData: Post;
+            if (currentPost && currentPost.id) {
+                const postRef = doc(db, 'posts', currentPost.id);
+                await updateDoc(postRef, postData);
+                savedPostData = { ...currentPost, ...postData, updatedAt: Timestamp.now() };
             } else {
-                await setDoc(doc(collection(db, 'posts')), { ...postData, createdAt: serverTimestamp(), featured: false });
+                const docRef = await addDoc(collection(db, 'posts'), { 
+                    ...postData, 
+                    createdAt: serverTimestamp(), 
+                    featured: false 
+                });
+                savedPostData = { 
+                    ...postData, 
+                    id: docRef.id, 
+                    createdAt: Timestamp.now(), 
+                    featured: false,
+                    updatedAt: Timestamp.now(),
+                };
+                setCurrentPost(savedPostData); 
             }
-            // Success feedback is now handled by the editor component
+            onSaveCallback(savedPostData);
+            // Success feedback is handled by ChiariEditor
         } catch (error) {
             console.error("Error saving post:", error);
             alert("Failed to save post. Check console for details.");
@@ -129,7 +132,7 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
         <div className="p-8 overflow-y-auto h-full scrollbar-thin scrollbar-thumb-accent/50 scrollbar-track-surface/10">
             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-white">{post ? 'Edit Post' : 'Create New Post'}</h2>
+                    <h2 className="text-2xl font-bold text-white">{currentPost ? 'Edit Post' : 'Create New Post'}</h2>
                     <Button variant="destructive" size="icon" onClick={onClose}><X /></Button>
                 </div>
 
@@ -156,6 +159,7 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
                     setPrimaryKeyword={setPrimaryKeyword}
                     setSecondaryKeywords={setSecondaryKeywords}
                     onClose={onClose}
+                    post={currentPost}
                 />
             </form>
         </div>
