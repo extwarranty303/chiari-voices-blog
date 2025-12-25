@@ -22,8 +22,12 @@ import type { Dispatch, SetStateAction } from 'react';
 import { Input, Textarea, Label } from '../ui';
 import { DocumentImporter } from './DocumentImporter';
 import { uploadImage } from './ImageUpload';
-import { CheckCircle2, Eye } from 'lucide-react';
+import { CheckCircle2, Eye, X } from 'lucide-react';
 import PostPreview from '../PostPreview';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { createLowlight } from 'lowlight';
+
+const lowlight = createLowlight();
 
 interface ChiariEditorProps {
     content: string;
@@ -37,6 +41,8 @@ interface ChiariEditorProps {
     slug: string;
     primaryKeyword: string;
     secondaryKeywords: string;
+    coverImage: string;
+    setCoverImage: (value: string) => void;
     setTitle: (value: string) => void;
     setStatus: (value: 'published' | 'draft' | 'archived') => void;
     setTags: (value: string[]) => void;
@@ -45,6 +51,7 @@ interface ChiariEditorProps {
     setSlug: (value: string) => void;
     setPrimaryKeyword: (value: string) => void;
     setSecondaryKeywords: Dispatch<SetStateAction<string>>;
+    onClose: () => void;
 }
 
 const ChiariEditor: React.FC<ChiariEditorProps> = ({ 
@@ -56,17 +63,22 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
     metaDescription, setMetaDescription,
     slug, setSlug,
     primaryKeyword, setPrimaryKeyword,
-    secondaryKeywords, setSecondaryKeywords
+    secondaryKeywords, setSecondaryKeywords,
+    coverImage, setCoverImage,
+    onClose
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const coverImageInputRef = useRef<HTMLInputElement>(null);
     const [showSavedMessage, setShowSavedMessage] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [isSourceView, setIsSourceView] = useState(false);
 
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
                 bulletList: { keepMarks: true, keepAttributes: false },
                 orderedList: { keepMarks: true, keepAttributes: false },
+                codeBlock: false, // Disable default to use CodeBlockLowlight
             }),
             Underline,
             TextStyle,
@@ -95,10 +107,15 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
                 allowBase64: true,
                 HTMLAttributes: { class: 'rounded-xl shadow-lg max-w-full' },
             }),
+            CodeBlockLowlight.configure({
+                lowlight,
+            }),
         ],
         content: content,
         onUpdate: ({ editor }) => {
-            setContent(editor.getHTML());
+            if (!isSourceView) {
+                setContent(editor.getHTML());
+            }
         },
         editorProps: {
             attributes: {
@@ -108,12 +125,12 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
     });
 
     useEffect(() => {
-        if (editor && content && editor.getHTML() !== content) {
+        if (editor && content && editor.getHTML() !== content && !isSourceView) {
              if (Math.abs(editor.getHTML().length - content.length) > 20 || content === '') {
                  editor.commands.setContent(content);
              }
         }
-    }, [content, editor]);
+    }, [content, editor, isSourceView]);
 
     const handleImport = (html: string) => {
         if (editor) {
@@ -128,19 +145,26 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
 
         try {
             const downloadUrl = await uploadImage(file);
-            editor.chain().focus().setImage({ src: downloadUrl }).run();
+            if (event.target.name === 'coverImage') {
+                setCoverImage(downloadUrl);
+            } else {
+                editor.chain().focus().setImage({ src: downloadUrl }).run();
+            }
         } catch (error) {
             console.error("Image upload failed:", error);
             alert("Failed to upload image.");
         } finally {
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            if (coverImageInputRef.current) coverImageInputRef.current.value = '';
         }
     };
 
     const triggerImageUpload = () => {
         fileInputRef.current?.click();
+    };
+    
+    const triggerCoverImageUpload = () => {
+        coverImageInputRef.current?.click();
     };
 
     const handleSaveClick = async () => {
@@ -149,119 +173,86 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
         setTimeout(() => setShowSavedMessage(false), 3000);
     };
 
+    const toggleSourceView = () => {
+        setIsSourceView(!isSourceView);
+    };
+
+    const handleSourceChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setContent(e.target.value);
+    };
+
     return (
         <div className="space-y-6">
-            <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleImageUpload} 
-                accept="image/*" 
-                className="hidden" 
-            />
+             <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" name="contentImage" />
+             <input type="file" ref={coverImageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" name="coverImage" />
 
+            {/* Post Metadata */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-white">
+                {/* Left Column */}
                 <div className="space-y-4">
-                    <Input 
-                        label="Post Title" 
-                        value={title} 
-                        onChange={(e) => setTitle(e.target.value)} 
-                        placeholder="Enter post title" 
-                        required 
-                        className="bg-slate-900 border-slate-700"
-                    />
-                    
-                     <div className="flex flex-col gap-1.5">
+                    <Input label="Post Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter post title" required className="bg-slate-900 border-slate-700" />
+                    <div className="flex flex-col gap-1.5">
                         <Label>Status</Label>
-                        <select 
-                            className="flex h-10 w-full items-center justify-between rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
-                            value={status} 
-                            onChange={(e) => setStatus(e.target.value as any)}
-                        >
+                        <select className="flex h-10 w-full items-center justify-between rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50" value={status} onChange={(e) => setStatus(e.target.value as any)}>
                             <option value="draft">Draft</option>
                             <option value="published">Published</option>
                             <option value="archived">Archived</option>
                         </select>
                     </div>
-
-                    <Input 
-                        label="Tags (comma separated)" 
-                        value={tags.join(', ')} 
-                        onChange={(e) => setTags(e.target.value.split(',').map(t => t.trim()))} 
-                        placeholder="health, wellness, chiari" 
-                        className="bg-slate-900 border-slate-700"
-                    />
+                    <Input label="Tags (comma separated)" value={tags.join(', ')} onChange={(e) => setTags(e.target.value.split(',').map(t => t.trim()))} placeholder="health, wellness, chiari" className="bg-slate-900 border-slate-700" />
                 </div>
 
-                 <div className="space-y-4">
-                    <Input 
-                        label="Slug (URL)" 
-                        value={slug} 
-                        onChange={(e) => setSlug(e.target.value)} 
-                        placeholder="post-url-slug" 
-                        className="bg-slate-900 border-slate-700"
-                    />
-                     <Input 
-                        label="Meta Title" 
-                        value={metaTitle} 
-                        onChange={(e) => setMetaTitle(e.target.value)} 
-                        placeholder="SEO Title" 
-                        className="bg-slate-900 border-slate-700"
-                    />
+                {/* Right Column */}
+                <div className="space-y-4">
+                    <Input label="Slug (URL)" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="post-url-slug" className="bg-slate-900 border-slate-700" />
+                    <Input label="Meta Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} placeholder="SEO Title" className="bg-slate-900 border-slate-700" />
+                     <div>
+                        <Label>Cover Image</Label>
+                        <div className="mt-1 flex items-center gap-4">
+                            <button type="button" onClick={triggerCoverImageUpload} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border border-slate-700 hover:bg-slate-800 text-white h-10 px-4">
+                                Upload Image
+                            </button>
+                            {coverImage && <img src={coverImage} alt="Cover" className="h-10 w-16 object-cover rounded" />}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="space-y-4 text-white">
-                <Textarea 
-                    label="Meta Description" 
-                    value={metaDescription} 
-                    onChange={(e) => setMetaDescription(e.target.value)} 
-                    placeholder="Brief description for search engines" 
-                    rows={3}
-                    className="bg-slate-900 border-slate-700"
-                />
+             <div className="space-y-4 text-white">
+                <Textarea label="Meta Description" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} placeholder="Brief description for search engines" rows={3} className="bg-slate-900 border-slate-700" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input 
-                        label="Primary Keyword" 
-                        value={primaryKeyword} 
-                        onChange={(e) => setPrimaryKeyword(e.target.value)} 
-                        placeholder="Main focus keyword" 
-                        className="bg-slate-900 border-slate-700"
-                    />
-                     <Input 
-                        label="Secondary Keywords (comma separated)" 
-                        value={secondaryKeywords} 
-                        onChange={(e) => setSecondaryKeywords(e.target.value)} 
-                        placeholder="related, keywords, here" 
-                        className="bg-slate-900 border-slate-700"
-                    />
+                    <Input label="Primary Keyword" value={primaryKeyword} onChange={(e) => setPrimaryKeyword(e.target.value)} placeholder="Main focus keyword" className="bg-slate-900 border-slate-700" />
+                    <Input label="Secondary Keywords (comma separated)" value={secondaryKeywords} onChange={(e) => setSecondaryKeywords(e.target.value)} placeholder="related, keywords, here" className="bg-slate-900 border-slate-700" />
                 </div>
             </div>
 
+            {/* Editor */}
             <div className="border border-slate-700 rounded-xl relative bg-slate-950/30 font-sans min-h-[700px] flex flex-col">
-                {/* Sticky Header */}
                 <div className="sticky top-[-2px] z-50 flex flex-wrap justify-between items-center p-2 border-b border-slate-700 bg-slate-950 shadow-xl rounded-t-xl">
-                    <Toolbar editor={editor} addImage={triggerImageUpload} />
+                    <Toolbar editor={editor} addImage={triggerImageUpload} isSourceMode={isSourceView} toggleSourceMode={toggleSourceView} />
                     <div className="hidden sm:block px-2">
                         <DocumentImporter onImport={handleImport} />
                     </div>
                 </div>
                 
-                {/* Scrollable Content Area */}
                 <div className="flex-grow p-2 sm:p-6 bg-slate-950/10">
-                    <EditorContent editor={editor} />
+                    {isSourceView ? (
+                        <textarea
+                            className="w-full h-full bg-slate-900 text-slate-200 p-4 rounded-b-xl focus:outline-none font-mono text-sm resize-none"
+                            value={content}
+                            onChange={handleSourceChange}
+                        />
+                    ) : (
+                        <EditorContent editor={editor} />
+                    )}
                 </div>
                 
-                {/* Editor Footer */}
                 <div className="p-3 border-t border-slate-700 bg-slate-950 flex justify-between items-center text-[10px] text-slate-500 uppercase tracking-widest font-bold rounded-b-xl">
                     <div className="flex gap-4">
                         <span>{editor?.storage.characterCount.words()} Words</span>
                         <span>{editor?.storage.characterCount.characters()} Characters</span>
                     </div>
-                    <button 
-                        type="button"
-                        onClick={() => setIsPreviewOpen(true)}
-                        className="flex items-center gap-1.5 text-accent hover:text-accent/80 transition-colors"
-                    >
+                    <button type="button" onClick={() => setIsPreviewOpen(true)} className="flex items-center gap-1.5 text-accent hover:text-accent/80 transition-colors">
                         <Eye size={12} /> Live Preview
                     </button>
                 </div>
@@ -274,18 +265,13 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
                          <span>Changes saved successfully</span>
                      </div>
                  )}
-                 <button 
-                    type="button"
-                    onClick={() => setIsPreviewOpen(true)}
-                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border border-slate-700 hover:bg-slate-800 text-white h-10 px-6 active:scale-95 transition-all"
-                 >
+                 <button type="button" onClick={onClose} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border border-slate-700 hover:bg-slate-800 text-white h-10 px-6 active:scale-95 transition-all">
+                    <X size={18} className="mr-2" /> Close
+                 </button>
+                 <button type="button" onClick={() => setIsPreviewOpen(true)} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium border border-slate-700 hover:bg-slate-800 text-white h-10 px-6 active:scale-95 transition-all">
                     <Eye size={18} className="mr-2" /> Preview
                  </button>
-                 <button 
-                    type="button"
-                    onClick={handleSaveClick}
-                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-accent text-white hover:bg-accent/90 h-10 px-8 shadow-lg shadow-accent/20 active:scale-95"
-                 >
+                 <button type="button" onClick={handleSaveClick} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-accent text-white hover:bg-accent/90 h-10 px-8 shadow-lg shadow-accent/20 active:scale-95">
                     Save Changes
                  </button>
              </div>
@@ -297,7 +283,7 @@ const ChiariEditor: React.FC<ChiariEditorProps> = ({
                         content: content,
                         tags: tags,
                         readTime: editor ? Math.ceil(editor.storage.characterCount.words() / 200) : 0,
-                        imageUrl: undefined // For now, we use external URLs but could handle local previews if needed
+                        imageUrl: coverImage
                     }}
                     onClose={() => setIsPreviewOpen(false)}
                  />

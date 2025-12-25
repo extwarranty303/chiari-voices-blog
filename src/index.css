@@ -123,53 +123,85 @@
   outline: none;
 }
 
+/* Shared styles for editor and rendered content */
+.ProseMirror, .prose {
+  --tw-prose-body: theme('colors.slate.200');
+  --tw-prose-headings: theme('colors.white');
+  --tw-prose-lead: theme('colors.slate.300');
+  --tw-prose-links: theme('colors.purple.400');
+  --tw-prose-bold: theme('colors.white');
+  --tw-prose-counters: theme('colors.slate.400');
+  --tw-prose-bullets: theme('colors.slate.400');
+  --tw-prose-hr: theme('colors.slate.700');
+  --tw-prose-quotes: theme('colors.slate.300');
+  --tw-prose-quote-borders: theme('colors.purple.600');
+  --tw-prose-captions: theme('colors.slate.400');
+  --tw-prose-code: theme('colors.white');
+  --tw-prose-pre-code: theme('colors.slate.200');
+  --tw-prose-pre-bg: theme('colors.slate.800');
+  --tw-prose-th-borders: theme('colors.slate.600');
+  --tw-prose-td-borders: theme('colors.slate.700');
+}
+
+.ProseMirror p, .prose p {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.ProseMirror h1, .prose h1 {
+  font-size: 2.25em !important; 
+  font-weight: 800 !important;
+  margin-top: 1.5em;
+  margin-bottom: 1em;
+}
+.ProseMirror h2, .prose h2 {
+  font-size: 1.875em !important;
+  font-weight: 700 !important;
+  margin-top: 1.5em;
+  margin-bottom: 1em;
+}
+.ProseMirror h3, .prose h3 {
+  font-size: 1.5em !important;
+  font-weight: 600 !important;
+  margin-top: 1.5em;
+  margin-bottom: 1em;
+}
+
 .ProseMirror ul, .prose ul {
   list-style-type: disc !important;
   padding-left: 2rem !important;
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-top: 1em;
+  margin-bottom: 1em;
 }
 
 .ProseMirror ol, .prose ol {
   list-style-type: decimal !important;
   padding-left: 2rem !important;
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.ProseMirror ul ul, .ProseMirror ol ul, .prose ul ul, .prose ol ul {
-  list-style-type: circle !important;
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
+  margin-top: 1em;
+  margin-bottom: 1em;
 }
 
 .ProseMirror li, .prose li {
-  margin-bottom: 0.25rem;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
 }
 
 /* Alignment Classes */
-.ProseMirror .text-align-left, .prose .text-align-left { text-align: left; }
-.ProseMirror .text-align-center, .prose .text-align-center { text-align: center; }
-.ProseMirror .text-align-right, .prose .text-align-right { text-align: right; }
-.ProseMirror .text-align-justify, .prose .text-align-justify { text-align: justify; }
+.text-align-left { text-align: left; }
+.text-align-center { text-align: center; }
+.text-align-right { text-align: right; }
+.text-align-justify { text-align: justify; }
 
-.ProseMirror h1 { font-size: 2.25rem; font-weight: 800; margin-bottom: 1rem; }
-.ProseMirror h2 { font-size: 1.875rem; font-weight: 700; margin-bottom: 0.75rem; }
-.ProseMirror h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
-
-.ProseMirror blockquote {
-  border-left: 4px solid var(--color-accent);
-  padding-left: 1.5rem;
+.ProseMirror blockquote, .prose blockquote {
+  border-left-width: 4px !important;
+  padding-left: 1.5rem !important;
   font-style: italic;
-  color: var(--color-muted);
-  margin: 1.5rem 0;
 }
 
-.ProseMirror img {
-  max-width: 100%;
-  height: auto;
+.ProseMirror img, .prose img {
   border-radius: 0.75rem;
-  margin: 1.5rem 0;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
 }
 
 /* Placeholder support */
@@ -182,12 +214,12 @@
 }
 
 /* Task List Styles */
-.ProseMirror ul[data-type="taskList"] {
+.ProseMirror ul[data-type="taskList"], .prose ul[data-type="taskList"] {
   list-style: none !important;
   padding: 0 !important;
 }
 
-.ProseMirror ul[data-type="taskList"] li {
+.ProseMirror ul[data-type="taskList"] li, .prose ul[data-type="taskList"] li {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;

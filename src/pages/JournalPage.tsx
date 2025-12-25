@@ -106,7 +106,7 @@ export default function JournalPage() {
               />
             </div>
             <div className="mb-4 border border-gray-600 rounded-md bg-gray-700">
-               {editor && <Toolbar editor={editor} />}
+               {editor && <Toolbar editor={editor} addImage={() => {}} isSourceMode={false} toggleSourceMode={() => {}} />}
                <div className="p-2">
                 <EditorContent editor={editor} />
                </div>

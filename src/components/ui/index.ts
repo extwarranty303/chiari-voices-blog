@@ -7,3 +7,4 @@ export * from './Label';
 export * from './Modal';
 export * from './Select';
 export * from './Textarea';
+export * from './toggle';

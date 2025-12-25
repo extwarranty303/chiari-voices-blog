@@ -44,7 +44,7 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [tags, setTags] = useState<string[]>([]);
-    const [postImage, setPostImage] = useState('');
+    const [coverImage, setCoverImage] = useState('');
     const [status, setStatus] = useState<'draft' | 'published' | 'archived'>('draft');
     const [readTime, setReadTime] = useState(0);
 
@@ -59,7 +59,7 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
             setTitle(post.title);
             setContent(post.content || '');
             setTags(post.tags || []);
-            setPostImage(post.imageUrl || '');
+            setCoverImage(post.imageUrl || '');
             setStatus(post.status);
             setReadTime(post.readTime || 0);
             setMetaTitle(post.metaTitle || '');
@@ -72,7 +72,7 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
           setTitle('');
           setContent('');
           setTags([]);
-          setPostImage('');
+          setCoverImage('');
           setStatus('draft');
           setReadTime(0);
           setMetaTitle('');
@@ -106,7 +106,7 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
         const excerpt = (tempDiv.textContent || '').slice(0, 150) + '...';
 
         const postData: any = {
-            title, content, excerpt, tags, imageUrl: postImage, status, readTime,
+            title, content, excerpt, tags, imageUrl: coverImage, status, readTime,
             authorId: user.uid, authorName: 'Chiari Voices Admin', updatedAt: serverTimestamp(),
             metaTitle: metaTitle || title, metaDescription, slug: slug || generateSlug(title),
             primaryKeyword, secondaryKeywords: secondaryKeywords.split(',').map(k => k.trim()).filter(Boolean),
@@ -144,6 +144,8 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
                     slug={slug}
                     primaryKeyword={primaryKeyword}
                     secondaryKeywords={secondaryKeywords}
+                    coverImage={coverImage}
+                    setCoverImage={setCoverImage}
                     setContent={setContent}
                     setTitle={setTitle}
                     setStatus={setStatus}
@@ -153,6 +155,7 @@ export default function PostEditor({ post, onClose }: PostEditorProps) {
                     setSlug={setSlug}
                     setPrimaryKeyword={setPrimaryKeyword}
                     setSecondaryKeywords={setSecondaryKeywords}
+                    onClose={onClose}
                 />
             </form>
         </div>

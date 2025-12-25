@@ -1,122 +1,87 @@
-
-import { type Editor } from '@tiptap/react';
-import { 
-  Bold, Italic, Underline, Strikethrough, 
-  List, ListOrdered, Heading1, Heading2, Heading3, 
-  Image as ImageIcon, Minus, Plus,
-  AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  Indent as IndentIcon, Outdent as OutdentIcon,
-  Link as LinkIcon, Highlighter, CheckSquare,
-  Subscript as SubIcon, Superscript as SuperIcon,
-  Quote, Undo, Redo
-} from 'lucide-react';
-import { Toggle } from '../ui/toggle';
-import { Button } from '../ui/Button';
+import React from 'react';
+import type { Editor } from '@tiptap/react';
+import { Toggle } from '../ui';
+import { Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3, Pilcrow, Quote, List, ListOrdered, Subscript, Superscript, ImageIcon, Baseline, Indent, Outdent, AlignLeft, AlignCenter, AlignRight, AlignJustify, Highlighter, Palette, Undo, Redo, FileCode } from 'lucide-react';
 
 interface ToolbarProps {
-  editor: Editor | null;
-  addImage?: () => void;
+    editor: Editor | null;
+    addImage: () => void;
+    isSourceMode: boolean;
+    toggleSourceMode: () => void;
 }
 
-export const Toolbar = ({ editor, addImage }: ToolbarProps) => {
-  if (!editor) {
-    return null;
-  }
-
-  const setFontSize = (size: string) => {
-    editor.chain().focus().setFontSize(size).run();
-  };
-
-  const currentFontSize = editor.getAttributes('textStyle').fontSize || '16';
-
-  const adjustFontSize = (amount: number) => {
-      const current = parseInt(currentFontSize.replace('px', ''));
-      const newSize = current + amount;
-      if (newSize > 0) {
-          setFontSize(`${newSize}px`);
-      }
-  };
-
-  const addLink = () => {
-    const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
-
-    if (url === null) {
-      return;
+export const Toolbar: React.FC<ToolbarProps> = ({ editor, addImage, isSourceMode, toggleSourceMode }) => {
+    if (!editor) {
+        return null;
     }
 
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      return;
-    }
+    const setFontSize = (size: number) => {
+        editor.chain().focus().setFontSize(size + 'px').run();
+    };
 
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-  };
+    const currentColor = editor.getAttributes('textStyle').color || '#ffffff';
 
-  return (
-    <div className="flex items-center gap-1 flex-wrap p-1 max-w-4xl">
-      {/* History */}
-      <div className="flex items-center gap-0.5 mr-2">
-        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}><Undo size={14}/></Button>
-        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}><Redo size={14}/></Button>
-      </div>
+    return (
+        <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-900 rounded-lg border border-slate-700">
+            {/* History */}
+            <Toggle size="sm" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo() || isSourceMode}><Undo size={16} /></Toggle>
+            <Toggle size="sm" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo() || isSourceMode}><Redo size={16} /></Toggle>
+            
+            <div className="w-px h-6 bg-slate-600 mx-1" />
 
-      <div className="w-px h-6 bg-slate-800 mx-1" />
+            {/* Headings */}
+            <Toggle size="sm" pressed={editor.isActive('heading', { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} disabled={isSourceMode}><Heading1 size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} disabled={isSourceMode}><Heading2 size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} disabled={isSourceMode}><Heading3 size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('paragraph')} onClick={() => editor.chain().focus().setParagraph().run()} disabled={isSourceMode}><Pilcrow size={16} /></Toggle>
 
-      {/* Text Style Group */}
-      <Toggle size="sm" pressed={editor.isActive('bold')} onPressedChange={() => editor.chain().focus().toggleBold().run()} title="Bold"><Bold className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive('italic')} onPressedChange={() => editor.chain().focus().toggleItalic().run()} title="Italic"><Italic className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive('underline')} onPressedChange={() => editor.chain().focus().toggleUnderline().run()} title="Underline"><Underline className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive('strike')} onPressedChange={() => editor.chain().focus().toggleStrike().run()} title="Strike"><Strikethrough className="h-4 w-4" /></Toggle>
-      
-      <div className="w-px h-6 bg-slate-800 mx-1" />
-      
-      {/* Font Size */}
-      <div className="flex items-center gap-1 bg-slate-900 rounded-md px-1 border border-slate-800 h-8">
-          <button type="button" onClick={() => adjustFontSize(-1)} className="p-1 hover:bg-slate-800 rounded text-slate-400"><Minus className="h-3 w-3" /></button>
-          <span className="text-[10px] font-mono w-5 text-center text-accent font-bold">{currentFontSize.replace('px','')}</span>
-          <button type="button" onClick={() => adjustFontSize(1)} className="p-1 hover:bg-slate-800 rounded text-slate-400"><Plus className="h-3 w-3" /></button>
-      </div>
+             <div className="w-px h-6 bg-slate-600 mx-1" />
 
-      <div className="w-px h-6 bg-slate-800 mx-1" />
+            {/* Styling */}
+            <Toggle size="sm" pressed={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} disabled={isSourceMode}><Bold size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} disabled={isSourceMode}><Italic size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} disabled={isSourceMode}><Underline size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()} disabled={isSourceMode}><Strikethrough size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('highlight')} onClick={() => editor.chain().focus().toggleHighlight().run()} disabled={isSourceMode}><Highlighter size={16} /></Toggle>
 
-      {/* Headings */}
-      <Toggle size="sm" pressed={editor.isActive('heading', { level: 1 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="H1"><Heading1 className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="H2"><Heading2 className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive('heading', { level: 3 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="H3"><Heading3 className="h-4 w-4" /></Toggle>
-      
-      <div className="w-px h-6 bg-slate-800 mx-1" />
+            <div className="w-px h-6 bg-slate-600 mx-1" />
 
-      {/* Alignment */}
-      <Toggle size="sm" pressed={editor.isActive({ textAlign: 'left' })} onPressedChange={() => editor.chain().focus().setTextAlign('left').run()} title="Align Left"><AlignLeft className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive({ textAlign: 'center' })} onPressedChange={() => editor.chain().focus().setTextAlign('center').run()} title="Align Center"><AlignCenter className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive({ textAlign: 'right' })} onPressedChange={() => editor.chain().focus().setTextAlign('right').run()} title="Align Right"><AlignRight className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive({ textAlign: 'justify' })} onPressedChange={() => editor.chain().focus().setTextAlign('justify').run()} title="Align Justify"><AlignJustify className="h-4 w-4" /></Toggle>
+            {/* Lists & Quote */}
+            <Toggle size="sm" pressed={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} disabled={isSourceMode}><List size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()} disabled={isSourceMode}><ListOrdered size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} disabled={isSourceMode}><Quote size={16} /></Toggle>
 
-      <div className="w-px h-6 bg-slate-800 mx-1" />
+            <div className="w-px h-6 bg-slate-600 mx-1" />
 
-      {/* Lists & Indents */}
-      <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()} title="Bullet List"><List className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive('orderedList')} onPressedChange={() => editor.chain().focus().toggleOrderedList().run()} title="Ordered List"><ListOrdered className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive('taskList')} onPressedChange={() => editor.chain().focus().toggleTaskList().run()} title="Task List"><CheckSquare className="h-4 w-4" /></Toggle>
-      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => editor.chain().focus().indent().run()} title="Indent"><IndentIcon size={14}/></Button>
-      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => editor.chain().focus().outdent().run()} title="Outdent"><OutdentIcon size={14}/></Button>
+            {/* Alignment */}
+            <Toggle size="sm" pressed={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()} disabled={isSourceMode}><AlignLeft size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive({ textAlign: 'center' })} onClick={() => editor.chain().focus().setTextAlign('center').run()} disabled={isSourceMode}><AlignCenter size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()} disabled={isSourceMode}><AlignRight size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive({ textAlign: 'justify' })} onClick={() => editor.chain().focus().setTextAlign('justify').run()} disabled={isSourceMode}><AlignJustify size={16} /></Toggle>
 
-      <div className="w-px h-6 bg-slate-800 mx-1" />
+            <div className="w-px h-6 bg-slate-600 mx-1" />
 
-      {/* Extras */}
-      <Toggle size="sm" pressed={editor.isActive('link')} onPressedChange={addLink} title="Add Link"><LinkIcon className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive('blockquote')} onPressedChange={() => editor.chain().focus().toggleBlockquote().run()} title="Blockquote"><Quote className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive('highlight')} onPressedChange={() => editor.chain().focus().toggleHighlight().run()} title="Highlight"><Highlighter className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive('subscript')} onPressedChange={() => editor.chain().focus().toggleSubscript().run()} title="Subscript"><SubIcon className="h-4 w-4" /></Toggle>
-      <Toggle size="sm" pressed={editor.isActive('superscript')} onPressedChange={() => editor.chain().focus().toggleSuperscript().run()} title="Superscript"><SuperIcon className="h-4 w-4" /></Toggle>
+            {/* Indentation */}
+            <Toggle size="sm" onClick={() => editor.chain().focus().indent().run()} disabled={!editor.can().indent() || isSourceMode}><Indent size={16} /></Toggle>
+            <Toggle size="sm" onClick={() => editor.chain().focus().outdent().run()} disabled={!editor.can().outdent() || isSourceMode}><Outdent size={16} /></Toggle>
+            
+            <div className="w-px h-6 bg-slate-600 mx-1" />
 
-      {addImage && (
-        <>
-            <div className="w-px h-6 bg-slate-800 mx-1" />
-            <Button size="sm" variant="ghost" onClick={addImage} title="Upload Image" className="h-8 w-8 p-0 text-slate-300 hover:text-white hover:bg-slate-800"><ImageIcon className="h-4 w-4" /></Button>
-        </>
-      )}
-    </div>
-  );
+             {/* Font Size & Color */}
+            <Toggle size="sm" onClick={() => setFontSize(parseInt(editor.getAttributes('textStyle').fontSize || '16') + 2)} disabled={isSourceMode}><Baseline size={16} className="h-4 w-4" />+</Toggle>
+            <Toggle size="sm" onClick={() => setFontSize(parseInt(editor.getAttributes('textStyle').fontSize || '16') - 2)} disabled={isSourceMode}><Baseline size={16} className="h-4 w-4" />-</Toggle>
+            <div className="relative">
+                <input type="color" value={currentColor} onChange={(e) => editor.chain().focus().setColor(e.target.value).run()} className="w-6 h-6 rounded border-none bg-transparent absolute opacity-0 cursor-pointer" disabled={isSourceMode} />
+                <Palette size={16} style={{ color: currentColor }} />
+            </div>
+
+             <div className="w-px h-6 bg-slate-600 mx-1" />
+
+            {/* Advanced & Media */}
+            <Toggle size="sm" onClick={addImage} disabled={isSourceMode}><ImageIcon size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('subscript')} onClick={() => editor.chain().focus().toggleSubscript().run()} disabled={isSourceMode}><Subscript size={16} /></Toggle>
+            <Toggle size="sm" pressed={editor.isActive('superscript')} onClick={() => editor.chain().focus().toggleSuperscript().run()} disabled={isSourceMode}><Superscript size={16} /></Toggle>
+            <Toggle size="sm" pressed={isSourceMode} onClick={toggleSourceMode}><FileCode size={16} /></Toggle>
+        </div>
+    );
 };

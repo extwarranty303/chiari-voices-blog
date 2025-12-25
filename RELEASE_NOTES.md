@@ -6,7 +6,16 @@ Chiari Voices is a comprehensive, accessible, and community-driven blog platform
 
 ---
 
-## Latest Features & Enhancements (v1.5.0)
+## Latest Features & Enhancements (v1.5.1)
+
+### 🐛 Bug Fixes & Stability
+*   **Editor Formatting Fix:** Resolved a critical bug where text formatting (indentation, font sizes, alignment) was being stripped out upon saving or previewing.
+    *   **Sanitization:** Reconfigured the HTML sanitizer (`DOMPurify`) to preserve essential `style` attributes and CSS classes required for custom formatting.
+    *   **CSS Refinements:** Improved the application's stylesheet to ensure nested bullet/ordered lists render with correct indentation and that text alignment (center, right) is properly displayed on the live site. This guarantees a true "what you see is what you get" (WYSIWYG) experience.
+
+---
+
+## v1.5.0
 
 ### 🖋️ Professional Blog Editor (Tiptap Integration)
 *   **Rich Text Toolbar:** Comprehensive editing suite including Bold, Italic, Underline, Strike, and Highlighting.
