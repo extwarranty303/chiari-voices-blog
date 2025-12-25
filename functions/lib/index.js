@@ -33,15 +33,19 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sitemap = void 0;
+exports.onPostDelete = exports.onPostChange = exports.sitemap = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
 const date_fns_1 = require("date-fns");
+const firestore_1 = require("firebase-functions/v2/firestore");
 admin.initializeApp();
 const db = admin.firestore();
 const escapeXml = (unsafe) => {
-    return unsafe.replace(/[<>&'"/]/g, (c) => {
+    if (typeof unsafe !== 'string') {
+        return '';
+    }
+    return unsafe.replace(/[<>&'"]/g, (c) => {
         switch (c) {
             case '<': return '&lt;';
             case '>': return '&gt;';
@@ -52,7 +56,7 @@ const escapeXml = (unsafe) => {
         }
     });
 };
-exports.sitemap = (0, https_1.onRequest)(async (req, res) => {
+const generateSitemap = async () => {
     logger.info("Sitemap generation requested");
     const baseUrl = "https://blog.chiarivoices.org";
     let xml = '<?xml version="1.0" encoding="UTF-8"?>';
@@ -77,9 +81,14 @@ exports.sitemap = (0, https_1.onRequest)(async (req, res) => {
         const postsSnapshot = await db.collection('posts').where('status', '==', 'published').orderBy('createdAt', 'desc').get();
         postsSnapshot.forEach(doc => {
             const post = doc.data();
-            const postUrl = `/post/${escapeXml(post.slug)}`;
-            const lastMod = post.createdAt?.seconds ? (0, date_fns_1.format)(new Date(post.createdAt.seconds * 1000), 'yyyy-MM-dd') : (0, date_fns_1.format)(new Date(), 'yyyy-MM-dd');
-            addUrl(postUrl, lastMod, 'weekly', '0.9');
+            if (post && post.slug) {
+                const postUrl = `/post/${escapeXml(post.slug)}`;
+                const lastMod = post.createdAt?.seconds ? (0, date_fns_1.format)(new Date(post.createdAt.seconds * 1000), 'yyyy-MM-dd') : (0, date_fns_1.format)(new Date(), 'yyyy-MM-dd');
+                addUrl(postUrl, lastMod, 'weekly', '0.9');
+            }
+            else {
+                logger.warn(`Post with id ${doc.id} is missing slug, skipping sitemap entry.`);
+            }
         });
     }
     catch (error) {
@@ -91,8 +100,12 @@ exports.sitemap = (0, https_1.onRequest)(async (req, res) => {
         const tags = new Set();
         tagsSnapshot.forEach(doc => {
             const post = doc.data();
-            if (post.tags) {
-                post.tags.forEach((tag) => tags.add(tag));
+            if (post && post.tags && Array.isArray(post.tags)) {
+                post.tags.forEach((tag) => {
+                    if (tag) {
+                        tags.add(tag);
+                    }
+                });
             }
         });
         tags.forEach(tag => {
@@ -103,7 +116,30 @@ exports.sitemap = (0, https_1.onRequest)(async (req, res) => {
         logger.error("Error fetching tags:", error);
     }
     xml += '</urlset>';
-    res.set('Content-Type', 'application/xml');
-    res.status(200).send(xml);
+    return xml;
+};
+exports.sitemap = (0, https_1.onRequest)(async (req, res) => {
+    try {
+        const sitemapXml = await generateSitemap();
+        res.set('Content-Type', 'application/xml');
+        res.status(200).send(sitemapXml);
+    }
+    catch (error) {
+        logger.error("Error generating sitemap:", error);
+        res.status(500).send("Sitemap generation failed.");
+    }
+});
+const regenerateSitemap = async () => {
+    logger.info("Sitemap regeneration triggered.");
+    // This is a simplified trigger. For a robust solution, consider using Pub/Sub or calling the function via HTTP.
+    await generateSitemap();
+};
+exports.onPostChange = (0, firestore_1.onDocumentWritten)("posts/{postId}", (event) => {
+    logger.info("Post changed, regenerating sitemap...");
+    return regenerateSitemap();
+});
+exports.onPostDelete = (0, firestore_1.onDocumentDeleted)("posts/{postId}", (event) => {
+    logger.info("Post deleted, regenerating sitemap...");
+    return regenerateSitemap();
 });
 //# sourceMappingURL=index.js.map

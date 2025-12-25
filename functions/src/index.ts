@@ -2,13 +2,17 @@ import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import { format } from 'date-fns';
+import { onDocumentWritten, onDocumentDeleted } from "firebase-functions/v2/firestore";
 
 admin.initializeApp();
 
 const db = admin.firestore();
 
 const escapeXml = (unsafe: string) => {
-  return unsafe.replace(/[<>&'"/]/g, (c) => {
+  if (typeof unsafe !== 'string') {
+    return '';
+  }
+  return unsafe.replace(/[<>&'"]/g, (c) => {
     switch (c) {
       case '<': return '&lt;';
       case '>': return '&gt;';
@@ -20,7 +24,7 @@ const escapeXml = (unsafe: string) => {
   });
 };
 
-export const sitemap = onRequest(async (req, res) => {
+const generateSitemap = async () => {
   logger.info("Sitemap generation requested");
 
   const baseUrl = "https://blog.chiarivoices.org";
@@ -50,9 +54,13 @@ export const sitemap = onRequest(async (req, res) => {
     const postsSnapshot = await db.collection('posts').where('status', '==', 'published').orderBy('createdAt', 'desc').get();
     postsSnapshot.forEach(doc => {
       const post = doc.data();
-      const postUrl = `/post/${escapeXml(post.slug)}`;
-      const lastMod = post.createdAt?.seconds ? format(new Date(post.createdAt.seconds * 1000), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-      addUrl(postUrl, lastMod, 'weekly', '0.9');
+      if (post && post.slug) {
+        const postUrl = `/post/${escapeXml(post.slug)}`;
+        const lastMod = post.createdAt?.seconds ? format(new Date(post.createdAt.seconds * 1000), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+        addUrl(postUrl, lastMod, 'weekly', '0.9');
+      } else {
+        logger.warn(`Post with id ${doc.id} is missing slug, skipping sitemap entry.`);
+      }
     });
   } catch (error) {
     logger.error("Error fetching posts:", error);
@@ -64,8 +72,12 @@ export const sitemap = onRequest(async (req, res) => {
     const tags = new Set<string>();
     tagsSnapshot.forEach(doc => {
       const post = doc.data();
-      if (post.tags) {
-        post.tags.forEach((tag: string) => tags.add(tag));
+      if (post && post.tags && Array.isArray(post.tags)) {
+        post.tags.forEach((tag: string) => {
+            if(tag) {
+                tags.add(tag)
+            }
+        });
       }
     });
 
@@ -77,7 +89,32 @@ export const sitemap = onRequest(async (req, res) => {
   }
 
   xml += '</urlset>';
+  return xml;
+}
 
-  res.set('Content-Type', 'application/xml');
-  res.status(200).send(xml);
+export const sitemap = onRequest(async (req, res) => {
+  try {
+    const sitemapXml = await generateSitemap();
+    res.set('Content-Type', 'application/xml');
+    res.status(200).send(sitemapXml);
+  } catch (error) {
+    logger.error("Error generating sitemap:", error);
+    res.status(500).send("Sitemap generation failed.");
+  }
+});
+
+const regenerateSitemap = async () => {
+    logger.info("Sitemap regeneration triggered.");
+    // This is a simplified trigger. For a robust solution, consider using Pub/Sub or calling the function via HTTP.
+    await generateSitemap();
+};
+
+export const onPostChange = onDocumentWritten("posts/{postId}", (event) => {
+    logger.info("Post changed, regenerating sitemap...");
+    return regenerateSitemap();
+});
+
+export const onPostDelete = onDocumentDeleted("posts/{postId}", (event) => {
+    logger.info("Post deleted, regenerating sitemap...");
+    return regenerateSitemap();
 });

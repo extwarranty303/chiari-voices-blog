@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../lib/firebase';
 import { collection, updateDoc, doc, serverTimestamp, addDoc, FieldValue, Timestamp } from 'firebase/firestore';
 import { Button } from './ui';
 import { X } from "lucide-react";
 import { calculateReadTime } from '../utils/readTime';
-import ChiariEditor from './editor/ChiariEditor';
 import type { Post } from '../lib/types';
+
+const ChiariEditor = lazy(() => import('./editor/ChiariEditor'));
 
 const generateSlug = (title: string) => {
     return title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-');
@@ -135,32 +136,33 @@ export default function PostEditor({ post, onClose, onSave: onSaveCallback }: Po
                     <h2 className="text-2xl font-bold text-white">{currentPost ? 'Edit Post' : 'Create New Post'}</h2>
                     <Button variant="destructive" size="icon" onClick={onClose}><X /></Button>
                 </div>
-
-                <ChiariEditor 
-                    content={content}
-                    onSave={handleSave}
-                    title={title}
-                    status={status}
-                    tags={tags}
-                    metaTitle={metaTitle}
-                    metaDescription={metaDescription}
-                    slug={slug}
-                    primaryKeyword={primaryKeyword}
-                    secondaryKeywords={secondaryKeywords}
-                    coverImage={coverImage}
-                    setCoverImage={setCoverImage}
-                    setContent={setContent}
-                    setTitle={setTitle}
-                    setStatus={setStatus}
-                    setTags={setTags}
-                    setMetaTitle={setMetaTitle}
-                    setMetaDescription={setMetaDescription}
-                    setSlug={setSlug}
-                    setPrimaryKeyword={setPrimaryKeyword}
-                    setSecondaryKeywords={setSecondaryKeywords}
-                    onClose={onClose}
-                    post={currentPost}
-                />
+                <Suspense fallback={<div>Loading Editor...</div>}>
+                    <ChiariEditor 
+                        content={content}
+                        onSave={handleSave}
+                        title={title}
+                        status={status}
+                        tags={tags}
+                        metaTitle={metaTitle}
+                        metaDescription={metaDescription}
+                        slug={slug}
+                        primaryKeyword={primaryKeyword}
+                        secondaryKeywords={secondaryKeywords}
+                        coverImage={coverImage}
+                        setCoverImage={setCoverImage}
+                        setContent={setContent}
+                        setTitle={setTitle}
+                        setStatus={setStatus}
+                        setTags={setTags}
+                        setMetaTitle={setMetaTitle}
+                        setMetaDescription={setMetaDescription}
+                        setSlug={setSlug}
+                        setPrimaryKeyword={setPrimaryKeyword}
+                        setSecondaryKeywords={setSecondaryKeywords}
+                        onClose={onClose}
+                        post={currentPost}
+                    />
+                </Suspense>
             </form>
         </div>
     );
