@@ -38,7 +38,52 @@
     ],
     "headers": [
       {
-        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|js|css)",
+        "source": "/assets/blog-home-hero-two-BhklDQvn.png",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "/assets/index-EUFcy9c8.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "/assets/index-DE5Ei51y.css",
+        "headers": [
+          {
+            "key": "Cache-control",
+            "value": "max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "/assets/Home-_5mvwmvn.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "/assets/SEO-DLUqhh9l.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "**/@(jpg|jpeg|gif|png|svg|webp|js|css)",
         "headers": [
           {
             "key": "Cache-Control",
